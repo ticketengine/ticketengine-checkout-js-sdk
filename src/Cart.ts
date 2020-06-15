@@ -145,7 +145,7 @@ export class Cart {
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
 
         const validator = new HasToken(token);
-        this.getOrder(orderId, validator, [1000, 1000, 1000, 3000, 5000])
+        await this.getOrder(orderId, validator, [1000, 1000, 1000, 3000, 5000])
     }
 
 
