@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Example Ticket Engine Checkout Javascript SDK</title>
+
+    <script type="module" src="../dist/index.js"></script>
+
+    <script language="JavaScript">
+
+
+        const salesChannelId = 'c28c1f9a-a727-11ea-b3f8-0242ac17000a';
+        const registerId = 'ec037706-a727-11ea-b83b-0242ac17000a';
+        const eventId = '7bf809a6-a716-11ea-8f1a-0242ac170014';
+        const cart = new Cart(salesChannelId, registerId);
+
+
+        const event = cart.getEvent(eventId);
+
+
+    </script>
+
+</head>
+<body>
+     <h1>Example Ticket Engine Checkout Javascript SDK</h1>
+</body>
+</html>

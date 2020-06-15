@@ -1,0 +1,36 @@
+{
+  "name": "ticketengine-checkout-sdk",
+  "version": "0.1.0",
+  "description": "JavaScript SDK checkout web client for TicketEngine",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "jest --coverage"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.0",
+    "@types/node": "^14.0.13",
+    "jest": "^26.0.1",
+    "ts-jest": "^26.1.0",
+    "typescript": "^3.9.5"
+  },
+  "dependencies": {
+    "ticketengine-sdk": "^1.5.2"
+  },
+  "author": "Tom Timmerman <tom@ticketengine.nl>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ticketengine/ticketengine-checkout-js-sdk.git"
+  },
+  "homepage": "https://github.com/ticketengine/ticketengine-checkout-js-sdk#readme",
+  "keywords": [
+    "ticketengine",
+    "cart",
+    "checkout",
+    "client",
+    "api"
+  ]
+}
