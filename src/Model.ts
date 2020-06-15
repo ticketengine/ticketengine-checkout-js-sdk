@@ -108,5 +108,14 @@ export interface Order {
     lineItems: LineItem[];
 }
 
-
+export interface Customer {
+    id: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    sortName: string;
+    birthDate?: string;
+    gender?: string;
+    tags?: string;
+}
 

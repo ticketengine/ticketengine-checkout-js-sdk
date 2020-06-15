@@ -1,6 +1,6 @@
 import {WebClient} from "ticketengine-sdk";
-import {GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
-import {EventPrice, Order} from "./Model";
+import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
+import {Customer, EventPrice, Order} from "./Model";
 import {OrderValidator, CanCheckout, CanPay, HasToken} from "./OrderValidator";
 
 
@@ -59,6 +59,13 @@ export class Cart {
         const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currency,limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
         const response = await this.client.sendQuery<GetEventPricesResponse>(query);
         return response.data.eventPrices;
+    }
+
+
+    public async getCustomer(customerId: string): Promise<Customer> {
+        const query = `query { customer(id: "${customerId}"){id,firstName,lastName,fullName,sortName,birthDate,gender,email,tags{id,name}} }`;
+        const response = await this.client.sendQuery<GetCustomerResponse>(query);
+        return response.data.customer;
     }
 
 
