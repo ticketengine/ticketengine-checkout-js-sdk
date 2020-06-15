@@ -98,8 +98,14 @@ export class Cart {
     }
 
 
-    public async cancelOrder(): Promise<void> {
-        await this.client.order.cancelOrder({aggregateId: this.getOrderId()}, [0, 1000, 1000, 1000, 3000, 5000]);
+    public async cancelOrder(orderId?: string): Promise<void> {
+        if(!orderId) {
+            orderId = this.getOrderId()
+        }
+        await this.client.order.cancelOrder({aggregateId: orderId}, [0, 1000, 1000, 1000, 3000, 5000]);
+        if(this.hasOrderId() && this.getOrderId() === orderId) {
+            localStorage.removeItem("te-order-id");
+        }
     }
 
 
@@ -151,11 +157,11 @@ export class Cart {
 
     public async checkout(email: string, paymentMethod?: string): Promise<CheckoutResult> {
         const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
+        const paymentResults: Array<PaymentResult> = [];
         const canCheckout = new CanCheckout();
         const canPay = new CanPay();
         const orderId = this.getOrderId();
         const order = await this.getOrder(orderId);
-        const paymentResults: Array<PaymentResult> = [];
 
         // checkout if needed
         if(canCheckout.validate(order)) {
@@ -288,6 +294,11 @@ export class Cart {
         return localStorage.getItem("te-sales-channel-id") !== null;
     }
 
+    public removeSalesChannelId(): void {
+        localStorage.removeItem("te-sales-channel-id");
+        this.removeRegisterId();
+    }
+
     public getRegisterId(): string {
         const registerId = localStorage.getItem("te-register-id");
         if(registerId) {
@@ -304,7 +315,9 @@ export class Cart {
         return localStorage.getItem("te-register-id") !== null;
     }
 
-
+    public removeRegisterId(): void {
+        localStorage.removeItem("te-register-id");
+    }
 
 
 
