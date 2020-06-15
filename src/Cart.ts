@@ -8,9 +8,9 @@ import {OrderValidator, CanCheckout, CanPay, HasToken} from "./OrderValidator";
 export class Cart {
 
     client: WebClient;
-    salesChannelId: string;
-    registerId: string;
-    customerId?: string;
+    // salesChannelId: string;
+    // registerId: string;
+    // customerId?: string;
     oauthClientId: string;
     oauthClientSecret: string;
     oauthScope: string;
@@ -22,12 +22,15 @@ export class Cart {
             adminApiUrl: options.adminApiUrl || 'https://admin-api.ticketengine.io',
             graphApiUrl: options.graphApiUrl || 'https://graph-api.ticketengine.io'
         });
-        this.salesChannelId = options.salesChannelId;
-        this.registerId = options.registerId;
-        this.customerId = options.customerId;
+        // this.salesChannelId = options.salesChannelId;
+        // this.registerId = options.registerId;
+        // this.customerId = options.customerId;
         this.oauthClientId = options.clientId || 'shopping_cart';
         this.oauthClientSecret = options.clientSecret || '';
         this.oauthScope = options.scope || 'order:write payment:write event:read order:read';
+        if(options.salesChannelId) this.setSalesChannelId(options.salesChannelId);
+        if(options.registerId) this.setRegisterId(options.registerId);
+        if(options.customerId) this.setCustomerId(options.customerId);
     }
 
 
@@ -78,6 +81,21 @@ export class Cart {
 
         this.setOrderId(orderId);
         return response.data.order;
+    }
+
+
+    public async createOrder(): Promise<void> {
+        let customerId = undefined;
+        if(this.hasCustomerId()) {
+            customerId = this.getCustomerId()
+        }
+        const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
+        this.setOrderId(response.data.orderId);
+    }
+
+
+    public async cancelOrder(): Promise<void> {
+        await this.client.order.cancelOrder({aggregateId: this.getOrderId()}, [0, 1000, 1000, 1000, 3000, 5000]);
     }
 
 
@@ -203,6 +221,36 @@ export class Cart {
     }
 
 
+
+
+
+
+    public setCustomer(customerId: string): Promise<void> {
+        this.setCustomerId(customerId);
+        return new Promise((resolve: any) => '')
+    }
+
+    public removeCustomer(): Promise<void> {
+        localStorage.removeItem("te-customer-id");
+        return new Promise((resolve: any) => '')
+    }
+
+    private setCustomerId(customerId: string): void {
+        localStorage.setItem("te-customer-id", customerId);
+    }
+
+    public getCustomerId(): string {
+        const customerId = localStorage.getItem("te-customer-id");
+        if(customerId) {
+            return customerId;
+        }
+        throw new Error('No customer id found.');
+    }
+
+    public hasCustomerId(): boolean {
+        return localStorage.getItem("te-customer-id") !== null;
+    }
+
     public getOrderId(): string {
         const orderId = localStorage.getItem("te-order-id");
         if(orderId) {
@@ -211,25 +259,47 @@ export class Cart {
         throw new Error('No order id found.');
     }
 
-
     private setOrderId(orderId: string): void {
         localStorage.setItem("te-order-id", orderId);
     }
-
 
     public hasOrderId(): boolean {
         return localStorage.getItem("te-order-id") !== null;
     }
 
-
-    public async createOrder(): Promise<void> {
-        const response = await this.client.order.createOrder({salesChannelId: this.salesChannelId, registerId: this.registerId, customerId: this.customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
-        this.setOrderId(response.data.orderId);
+    public getSalesChannelId(): string {
+        const salesChannelId = localStorage.getItem("te-sales-channel-id");
+        if(salesChannelId) {
+            return salesChannelId;
+        }
+        throw new Error('No sales channel id found.');
     }
 
-    public async cancelOrder(): Promise<void> {
-        await this.client.order.cancelOrder({aggregateId: this.getOrderId()}, [0, 1000, 1000, 1000, 3000, 5000]);
+    public setSalesChannelId(salesChannelId: string): void {
+        localStorage.setItem("te-sales-channel-id", salesChannelId);
     }
+
+    public hasSalesChannelId(): boolean {
+        return localStorage.getItem("te-sales-channel-id") !== null;
+    }
+
+    public getRegisterId(): string {
+        const registerId = localStorage.getItem("te-register-id");
+        if(registerId) {
+            return registerId;
+        }
+        throw new Error('No register id found.');
+    }
+
+    public setRegisterId(registerId: string): void {
+        localStorage.setItem("te-register-id", registerId);
+    }
+
+    public hasRegisterId(): boolean {
+        return localStorage.getItem("te-register-id") !== null;
+    }
+
+
 
 
 
