@@ -53,9 +53,9 @@ export class Cart {
     }
 
 
-    public async getEventPrices(eventId: string, customerId?: string): Promise<Array<EventPrice>> {
+    public async getEventPrices(eventId: string): Promise<Array<EventPrice>> {
         const orderParam = this.hasOrderId() ? `, orderId: "${this.getOrderId()}"` : '';
-        const customerParam = customerId ? `, customerId: "${customerId}"` : '';
+        const customerParam = this.hasCustomerId() ? `, customerId: "${this.getCustomerId()}"` : '';
         const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currency,limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
         const response = await this.client.sendQuery<GetEventPricesResponse>(query);
         return response.data.eventPrices;
@@ -92,10 +92,7 @@ export class Cart {
 
 
     public async createOrder(): Promise<void> {
-        let customerId = undefined;
-        if(this.hasCustomerId()) {
-            customerId = this.getCustomerId()
-        }
+        const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
         this.setOrderId(response.data.orderId);
     }
@@ -152,7 +149,7 @@ export class Cart {
     }
 
 
-    public async checkout(email: string, paymentMethod?: string, customerId?: string): Promise<CheckoutResult> {
+    public async checkout(email: string, paymentMethod?: string): Promise<CheckoutResult> {
         const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
         const canCheckout = new CanCheckout();
         const canPay = new CanPay();
@@ -172,7 +169,7 @@ export class Cart {
         if(canPay.validate(order) && order.requiredPayments) {
             for (let index = 0; index < order.requiredPayments.length; index++) {
                 const requiredPayment = order.requiredPayments[index];
-                const paymentResult = await this.createPayment(requiredPayment.currency, requiredPayment.amount, paymentMethod, customerId);
+                const paymentResult = await this.createPayment(requiredPayment.currency, requiredPayment.amount, paymentMethod);
                 paymentResults.push(paymentResult);
             }
         }
@@ -186,8 +183,9 @@ export class Cart {
     // }
 
 
-    private async createPayment(currency: string, amount: number, method?: string, customerId?: string): Promise<PaymentResult> {
+    private async createPayment(currency: string, amount: number, method?: string): Promise<PaymentResult> {
         const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
+        const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         let paymentId = undefined;
         let action = undefined;
 
