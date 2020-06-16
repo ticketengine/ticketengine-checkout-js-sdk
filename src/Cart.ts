@@ -1,7 +1,7 @@
 import {WebClient} from "ticketengine-sdk";
 import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
 import {Customer, EventPrice, Order} from "./Model";
-import {OrderValidator, CanCheckout, CanPay, HasToken, HasReservedItems} from "./OrderValidator";
+import {OrderValidator, CanCheckout, CanPay, HasToken, HasReservedItems, HasRemovedItems} from "./OrderValidator";
 
 
 
@@ -174,13 +174,16 @@ export class Cart {
 
 
     public async removeItems(orderLineItemIds: Array<string>): Promise<void> {
+        const orderLineIds = [];
         for (let i = 0; i < orderLineItemIds.length; i++) {
             await this.client.order.removeItemFromCart({
                 aggregateId: this.getOrderId(),
                 orderLineItemId: orderLineItemIds[i]
             }, [0, 500, 1000, 1000, 1000, 3000, 5000]);
+            orderLineIds.push(orderLineItemIds[i]);
         }
 
+        const validator = new HasRemovedItems(orderLineItemIds);
         await this.fetchOrder(this.getOrderId(), validator, [500, 1000, 1000, 1000, 3000, 5000]);
     }
 
