@@ -2,32 +2,32 @@
 
 
 export enum OrderStatus {
-    pending,
-    checkOut,
-    reserved,
-    completed,
-    canceled,
-    timeout,
-    failed,
+    pending = 'pending',
+    checkOut = 'checkOut',
+    reserved = 'reserved',
+    completed = 'completed',
+    canceled = 'canceled',
+    timeout = 'timeout',
+    failed = 'failed',
 }
 
 export enum PaymentStatus {
-    paid,
-    pending,
-    none,
+    paid = 'paid',
+    pending = 'pending',
+    none = 'none',
 }
 
 export enum LineItemStatus {
-    pending,
-    awaitingClaim,
-    reserved,
-    completed,
-    removed,
+    pending = 'pending',
+    awaitingClaim = 'awaitingClaim',
+    reserved = 'reserved',
+    completed = 'completed',
+    removed = 'removed',
 }
 
 export enum LineItemType {
-    access,
-    product,
+    access = 'access',
+    product = 'product',
 }
 
 export interface RequiredPayment {
