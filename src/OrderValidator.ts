@@ -38,6 +38,9 @@ export class IsCheckedOut implements OrderValidator {
 
 export class HasPendingItems implements OrderValidator {
     validate(order: Order): Boolean {
+        if(!order || !order.lineItems) {
+            return false;
+        }
         return order.lineItems.filter((item) => {
             const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.pending, LineItemStatus.awaitingClaim];
             return pendingStatusses.includes(item.status)
@@ -53,6 +56,9 @@ export class HasReservedItems implements OrderValidator {
     }
 
     validate(order: Order): Boolean {
+        if(!order || !order.lineItems) {
+            return false;
+        }
         for(let i = 0; i < this.orderLineIds.length; i++){
             if(!order.lineItems.filter(l => l.status === LineItemStatus.reserved).map(l => l.id).includes(this.orderLineIds[i])) return false;
         }
@@ -66,6 +72,9 @@ export class IsEmpty implements OrderValidator {
         //     const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.reserved];
         //     return pendingStatusses.includes(item.status)
         // }).length === 0
+        if(!order || !order.lineItems) {
+            return true;
+        }
         return order.lineItems.length === 0
     }
 }
