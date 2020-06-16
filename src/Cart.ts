@@ -30,7 +30,7 @@ export class Cart {
         this.oauthScope = options.scope || 'order:write payment:write event:read order:read';
         if(options.salesChannelId) this.setSalesChannelId(options.salesChannelId);
         if(options.registerId) this.setRegisterId(options.registerId);
-        if(options.customerId) this.setCustomerId(options.customerId);
+        if(options.customerId) Cart.setCustomerId(options.customerId);
     }
 
 
@@ -54,7 +54,7 @@ export class Cart {
 
 
     public async getEventPrices(eventId: string): Promise<Array<EventPrice>> {
-        const orderParam = this.hasOrderId() ? `, orderId: "${this.getOrderId()}"` : '';
+        const orderParam = this.hasOrder() ? `, orderId: "${this.getOrderId()}"` : '';
         const customerParam = this.hasCustomerId() ? `, customerId: "${this.getCustomerId()}"` : '';
         const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currency,limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
         const response = await this.client.sendQuery<GetEventPricesResponse>(query);
@@ -69,7 +69,40 @@ export class Cart {
     }
 
 
-    public async getOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = []): Promise<Order> {
+    public async getOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = [], forceReload: boolean = false): Promise<Order> {
+        if(forceReload) {
+            await this.fetchOrder(orderId, validator, retryPolicy);
+        }
+
+        const o = localStorage.getItem("te-order");
+        if(!o) {
+            throw new Error('No order found.');
+        }
+        return JSON.parse(o);
+
+
+        // const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
+        // const response = await this.client.sendQuery<GetOrderResponse>(query, []);
+        //
+        // // check if order is in desired state
+        // // if not in desired state, retry query
+        // if(validator && !validator.validate(response.data.order)) {
+        //     const sleepTime = retryPolicy.shift();
+        //
+        //     // abort retry, retries attempts exceeded
+        //     if(sleepTime === undefined) throw new Error('Retry attempts exceeded.');
+        //
+        //     // retry
+        //     await this.sleep(sleepTime); // wait x milliseconds
+        //     return await this.getOrder(orderId, validator, retryPolicy)
+        // }
+        //
+        // this.setOrderId(orderId);
+        // return response.data.order;
+    }
+
+
+    private async fetchOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = []): Promise<Order> {
         const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
         const response = await this.client.sendQuery<GetOrderResponse>(query, []);
 
@@ -83,10 +116,10 @@ export class Cart {
 
             // retry
             await this.sleep(sleepTime); // wait x milliseconds
-            return await this.getOrder(orderId, validator, retryPolicy)
+            return await this.fetchOrder(orderId, validator, retryPolicy)
         }
 
-        this.setOrderId(orderId);
+        Cart.setOrder(response.data.order);
         return response.data.order;
     }
 
@@ -94,7 +127,7 @@ export class Cart {
     public async createOrder(): Promise<void> {
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
-        this.setOrderId(response.data.orderId);
+        this.fetchOrder(response.data.orderId, undefined, [0, 1000, 1000, 1000, 3000, 5000])
     }
 
 
@@ -103,7 +136,7 @@ export class Cart {
             orderId = this.getOrderId()
         }
         await this.client.order.cancelOrder({aggregateId: orderId}, [0, 1000, 1000, 1000, 3000, 5000]);
-        if(this.hasOrderId() && this.getOrderId() === orderId) {
+        if(this.hasOrder() && this.getOrderId() === orderId) {
             localStorage.removeItem("te-order-id");
         }
     }
@@ -112,13 +145,13 @@ export class Cart {
     public async addItems(cartItems: Array<CartItem>): Promise<void> {
         const retryPolicy = [0, 0, 0, 1000, 5000];
 
-        if(!this.hasOrderId()) {
+        if(!this.hasOrder()) {
             await this.createOrder();
         }
 
         for (let index = 0; index < cartItems.length; index++) {
             const cartItem = cartItems[index];
-            if(this.isAccessCartItem(cartItem)) {
+            if(Cart.isAccessCartItem(cartItem)) {
                 await this.client.order.addAccessToCart({
                     aggregateId: this.getOrderId(),
                     eventManagerId: cartItem.eventManagerId,
@@ -128,7 +161,7 @@ export class Cart {
                     requestedConditionPath: cartItem.requestedConditionPath,
                 }, retryPolicy);
             }
-            if(this.isProductCartItem(cartItem)) {
+            if(Cart.isProductCartItem(cartItem)) {
 
             }
         }
@@ -144,7 +177,7 @@ export class Cart {
         const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
         const orderId = this.getOrderId();
 
-        if(!this.hasOrderId()) {
+        if(!this.hasOrder()) {
             await this.createOrder();
         }
 
@@ -236,17 +269,56 @@ export class Cart {
 
 
 
+
+
+
+
+    public getOrderId(): string {
+        const orderString = localStorage.getItem("te-order");
+        if(orderString) {
+            const order = JSON.parse(orderString);
+            return order.id;
+        }
+        throw new Error('No order found.');
+    }
+
+    private static setOrder(order: Order): void {
+        localStorage.setItem("te-order", JSON.stringify(order));
+    }
+
+    public hasOrder(): boolean {
+        return localStorage.getItem("te-order") !== null;
+    }
+
+    // public getOrderId(): string {
+    //     const orderId = localStorage.getItem("te-order-id");
+    //     if(orderId) {
+    //         return orderId;
+    //     }
+    //     throw new Error('No order id found.');
+    // }
+
+    // private static setOrderId(orderId: string): void {
+    //     localStorage.setItem("te-order-id", orderId);
+    // }
+
+    // public hasOrderId(): boolean {
+    //     return localStorage.getItem("te-order-id") !== null;
+    // }
+
+
+
     public setCustomer(customerId: string): Promise<void> {
-        this.setCustomerId(customerId);
-        return new Promise((resolve: any) => '')
+        Cart.setCustomerId(customerId);
+        return new Promise(() => '')
     }
 
     public removeCustomer(): Promise<void> {
         localStorage.removeItem("te-customer-id");
-        return new Promise((resolve: any) => '')
+        return new Promise(() => '')
     }
 
-    private setCustomerId(customerId: string): void {
+    private static setCustomerId(customerId: string): void {
         localStorage.setItem("te-customer-id", customerId);
     }
 
@@ -262,21 +334,8 @@ export class Cart {
         return localStorage.getItem("te-customer-id") !== null;
     }
 
-    public getOrderId(): string {
-        const orderId = localStorage.getItem("te-order-id");
-        if(orderId) {
-            return orderId;
-        }
-        throw new Error('No order id found.');
-    }
 
-    private setOrderId(orderId: string): void {
-        localStorage.setItem("te-order-id", orderId);
-    }
 
-    public hasOrderId(): boolean {
-        return localStorage.getItem("te-order-id") !== null;
-    }
 
     public getSalesChannelId(): string {
         const salesChannelId = localStorage.getItem("te-sales-channel-id");
@@ -321,11 +380,11 @@ export class Cart {
 
 
 
-    private isAccessCartItem(item: CartItem): item is AccessCartItem {
+    private static isAccessCartItem(item: CartItem): item is AccessCartItem {
         return (item as AccessCartItem).eventId !== undefined;
     }
 
-    private isProductCartItem(item: CartItem): item is ProductCartItem {
+    private static isProductCartItem(item: CartItem): item is ProductCartItem {
         return (item as ProductCartItem).productId !== undefined;
     }
 
