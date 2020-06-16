@@ -1,7 +1,7 @@
 import {WebClient} from "ticketengine-sdk";
 import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
 import {Customer, EventPrice, Order} from "./Model";
-import {OrderValidator, CanCheckout, CanPay, HasToken} from "./OrderValidator";
+import {OrderValidator, CanCheckout, CanPay, HasToken, HasOrderLines} from "./OrderValidator";
 
 
 
@@ -144,6 +144,7 @@ export class Cart {
 
     public async addItems(cartItems: Array<CartItem>): Promise<void> {
         const retryPolicy = [0, 0, 0, 1000, 5000];
+        const orderLineIds = [];
 
         if(!this.hasOrder()) {
             await this.createOrder();
@@ -152,7 +153,7 @@ export class Cart {
         for (let index = 0; index < cartItems.length; index++) {
             const cartItem = cartItems[index];
             if(Cart.isAccessCartItem(cartItem)) {
-                await this.client.order.addAccessToCart({
+                const response = await this.client.order.addAccessToCart({
                     aggregateId: this.getOrderId(),
                     eventManagerId: cartItem.eventManagerId,
                     eventId: cartItem.eventId,
@@ -160,11 +161,15 @@ export class Cart {
                     // capacityLocationPath: cartItem.capacityLocationPath,
                     requestedConditionPath: cartItem.requestedConditionPath,
                 }, retryPolicy);
+                orderLineIds.push(response.data.orderLineItemId);
             }
             if(Cart.isProductCartItem(cartItem)) {
 
             }
         }
+
+        const validator = new HasOrderLines(orderLineIds);
+        await this.fetchOrder(this.getOrderId(), validator, [500, 1000, 1000, 1000, 3000, 5000]);
     }
 
 
@@ -184,7 +189,7 @@ export class Cart {
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
 
         const validator = new HasToken(token);
-        await this.getOrder(orderId, validator, [1000, 1000, 1000, 3000, 5000])
+        await this.getOrder(orderId, validator, [500, 1000, 1000, 1000, 3000, 5000])
     }
 
 
