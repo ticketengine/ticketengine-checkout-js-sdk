@@ -113,7 +113,7 @@ export class Cart {
         const retryPolicy = [0, 0, 0, 1000, 5000];
 
         if(!this.hasOrderId()) {
-            this.createOrder();
+            await this.createOrder();
         }
 
         for (let index = 0; index < cartItems.length; index++) {
@@ -145,7 +145,7 @@ export class Cart {
         const orderId = this.getOrderId();
 
         if(!this.hasOrderId()) {
-            this.createOrder();
+            await this.createOrder();
         }
 
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
