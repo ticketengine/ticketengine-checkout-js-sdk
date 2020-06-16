@@ -66,6 +66,24 @@ export class HasReservedItems implements OrderValidator {
     }
 }
 
+export class HasRemovedItems implements OrderValidator {
+    private readonly orderLineIds: string[];
+
+    constructor(orderLineIds: string[]) {
+        this.orderLineIds = orderLineIds;
+    }
+
+    validate(order: Order): Boolean {
+        if(!order || !order.lineItems) {
+            return false;
+        }
+        for(let i = 0; i < this.orderLineIds.length; i++){
+            if(!order.lineItems.filter(l => l.status === LineItemStatus.removed).map(l => l.id).includes(this.orderLineIds[i])) return false;
+        }
+        return true;
+    }
+}
+
 export class IsEmpty implements OrderValidator {
     validate(order: Order): Boolean {
         // return order.lineItems.filter((item) => {

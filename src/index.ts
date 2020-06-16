@@ -22,6 +22,7 @@ export {
     HasPendingItems,
     HasToken,
     HasReservedItems,
+    HasRemovedItems,
     CanCheckout,
     CanPay,
 } from './OrderValidator';

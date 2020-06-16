@@ -173,13 +173,20 @@ export class Cart {
     }
 
 
-    public async changeItems(): Promise<void> {
-        // kan ook alleen een remove doen? omdat quantity eignelijk niet bestaat.
+    public async removeItems(orderLineItemIds: Array<string>): Promise<void> {
+        for (let i = 0; i < orderLineItemIds.length; i++) {
+            await this.client.order.removeItemFromCart({
+                aggregateId: this.getOrderId(),
+                orderLineItemId: orderLineItemIds[i]
+            }, [0, 500, 1000, 1000, 1000, 3000, 5000]);
+        }
+
+        await this.fetchOrder(this.getOrderId(), validator, [500, 1000, 1000, 1000, 3000, 5000]);
     }
 
 
     public async addToken(token: string): Promise<void> {
-        const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
+        const retryPolicy = [0, 1000, 1000, 1000];
 
         if(!this.hasOrder()) {
             await this.createOrder();
