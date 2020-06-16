@@ -21,7 +21,7 @@ export {
     IsProcessingPayment,
     HasPendingItems,
     HasToken,
-    HasOrderLines,
+    HasReservedItems,
     CanCheckout,
     CanPay,
 } from './OrderValidator';

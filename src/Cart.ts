@@ -1,7 +1,7 @@
 import {WebClient} from "ticketengine-sdk";
 import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
 import {Customer, EventPrice, Order} from "./Model";
-import {OrderValidator, CanCheckout, CanPay, HasToken, HasOrderLines} from "./OrderValidator";
+import {OrderValidator, CanCheckout, CanPay, HasToken, HasReservedItems} from "./OrderValidator";
 
 
 
@@ -168,7 +168,7 @@ export class Cart {
             }
         }
 
-        const validator = new HasOrderLines(orderLineIds);
+        const validator = new HasReservedItems(orderLineIds);
         await this.fetchOrder(this.getOrderId(), validator, [500, 1000, 1000, 1000, 3000, 5000]);
     }
 

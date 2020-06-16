@@ -45,6 +45,21 @@ export class HasPendingItems implements OrderValidator {
     }
 }
 
+export class HasReservedItems implements OrderValidator {
+    private readonly orderLineIds: string[];
+
+    constructor(orderLineIds: string[]) {
+        this.orderLineIds = orderLineIds;
+    }
+
+    validate(order: Order): Boolean {
+        for(let i = 0; i < this.orderLineIds.length; i++){
+            if(!order.lineItems.filter(l => l.status === LineItemStatus.reserved).map(l => l.id).includes(this.orderLineIds[i])) return false;
+        }
+        return true;
+    }
+}
+
 export class IsEmpty implements OrderValidator {
     validate(order: Order): Boolean {
         // return order.lineItems.filter((item) => {
@@ -98,21 +113,6 @@ export class HasToken implements OrderValidator {
 
     validate(order: Order): Boolean {
         return order.tokens ? order.tokens.map(t => t.token).includes(this.token) : false;
-    }
-}
-
-export class HasOrderLines implements OrderValidator {
-    private readonly orderLineIds: string[];
-
-    constructor(orderLineIds: string[]) {
-        this.orderLineIds = orderLineIds;
-    }
-
-    validate(order: Order): Boolean {
-        for(let i = 0; i < this.orderLineIds.length; i++){
-            if(!order.lineItems.map(l => l.id).includes(this.orderLineIds[i])) return false;
-        }
-        return true;
     }
 }
 
