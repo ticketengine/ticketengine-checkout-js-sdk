@@ -295,6 +295,10 @@ export class Cart {
         return localStorage.getItem("te-order") !== null;
     }
 
+    public clearOrder(): void {
+        localStorage.removeItem("te-order");
+    }
+
     // public getOrderId(): string {
     //     const orderId = localStorage.getItem("te-order-id");
     //     if(orderId) {
@@ -358,9 +362,9 @@ export class Cart {
         return localStorage.getItem("te-sales-channel-id") !== null;
     }
 
-    public removeSalesChannelId(): void {
+    public clearSalesChannelId(): void {
         localStorage.removeItem("te-sales-channel-id");
-        this.removeRegisterId();
+        this.clearRegisterId();
     }
 
     public getRegisterId(): string {
@@ -379,7 +383,7 @@ export class Cart {
         return localStorage.getItem("te-register-id") !== null;
     }
 
-    public removeRegisterId(): void {
+    public clearRegisterId(): void {
         localStorage.removeItem("te-register-id");
     }
 
