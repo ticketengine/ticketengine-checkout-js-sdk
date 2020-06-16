@@ -127,7 +127,7 @@ export class Cart {
     public async createOrder(): Promise<void> {
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
-        this.fetchOrder(response.data.orderId, undefined, [0, 1000, 1000, 1000, 3000, 5000])
+        await this.fetchOrder(response.data.orderId, undefined, [0, 1000, 1000, 1000, 3000, 5000])
     }
 
 
