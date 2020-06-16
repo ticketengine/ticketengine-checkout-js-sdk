@@ -180,12 +180,12 @@ export class Cart {
 
     public async addToken(token: string): Promise<void> {
         const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
-        const orderId = this.getOrderId();
 
         if(!this.hasOrder()) {
             await this.createOrder();
         }
 
+        const orderId = this.getOrderId();
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
 
         const validator = new HasToken(token);
