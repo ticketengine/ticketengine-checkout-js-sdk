@@ -137,7 +137,7 @@ export class Cart {
         }
         await this.client.order.cancelOrder({aggregateId: orderId}, [0, 1000, 1000, 1000, 3000, 5000]);
         if(this.hasOrder() && this.getOrderId() === orderId) {
-            localStorage.removeItem("te-order-id");
+            localStorage.removeItem("te-order");
         }
     }
 
