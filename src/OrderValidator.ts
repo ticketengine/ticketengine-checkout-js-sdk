@@ -8,31 +8,31 @@ export interface OrderValidator {
 
 export class IsCompleted implements OrderValidator {
     validate(order: Order): Boolean {
-        return order.status === OrderStatus.completed;
+        return order && order.status === OrderStatus.completed;
     }
 }
 
 export class IsTimeout implements OrderValidator {
     validate(order: Order): Boolean {
-        return order.status === OrderStatus.timeout;
+        return order && order.status === OrderStatus.timeout;
     }
 }
 
 export class IsCanceled implements OrderValidator {
     validate(order: Order): Boolean {
-        return order.status === OrderStatus.canceled;
+        return order && order.status === OrderStatus.canceled;
     }
 }
 
 export class IsPending implements OrderValidator {
     validate(order: Order): Boolean {
-        return order.status === OrderStatus.pending;
+        return order && order.status === OrderStatus.pending;
     }
 }
 
 export class IsCheckedOut implements OrderValidator {
     validate(order: Order): Boolean {
-        return order.status === OrderStatus.checkOut;
+        return order && order.status === OrderStatus.checkOut;
     }
 }
 
@@ -82,13 +82,13 @@ export class IsEmpty implements OrderValidator {
 export class IsInFinalState implements OrderValidator {
     validate(order: Order): Boolean {
         const finalStates: Array<OrderStatus> = [OrderStatus.completed, OrderStatus.canceled, OrderStatus.timeout, OrderStatus.failed, OrderStatus.reserved];
-        return finalStates.includes(order.status);
+        return order && finalStates.includes(order.status);
     }
 }
 
 export class IsProcessingPayment implements OrderValidator {
     validate(order: Order): Boolean {
-        return order.status === OrderStatus.checkOut && order.paymentStatus !== PaymentStatus.paid
+        return order && order.status === OrderStatus.checkOut && order.paymentStatus !== PaymentStatus.paid
     }
 }
 
@@ -96,7 +96,7 @@ export class CanCheckout implements OrderValidator {
     validate(order: Order): Boolean {
         const isEmpty: IsEmpty = new IsEmpty();
         const hasPendingItems: HasPendingItems = new HasPendingItems();
-        return order.status === OrderStatus.pending
+        return order && order.status === OrderStatus.pending
             && !isEmpty.validate(order)
             && !hasPendingItems.validate(order)
     }
@@ -106,7 +106,7 @@ export class CanPay implements OrderValidator {
     validate(order: Order): Boolean {
         const isEmpty: IsEmpty = new IsEmpty();
         const hasPendingItems: HasPendingItems = new HasPendingItems();
-        return order.paymentStatus !== PaymentStatus.paid
+        return order && order.paymentStatus !== PaymentStatus.paid
             && (order.status === OrderStatus.pending || order.status === OrderStatus.checkOut)
             && !isEmpty.validate(order)
             && !hasPendingItems.validate(order)
@@ -121,7 +121,7 @@ export class HasToken implements OrderValidator {
     }
 
     validate(order: Order): Boolean {
-        return order.tokens ? order.tokens.map(t => t.token).includes(this.token) : false;
+        return order && order.tokens ? order.tokens.map(t => t.token).includes(this.token) : false;
     }
 }
 
