@@ -193,7 +193,7 @@ export class Cart {
     }
 
 
-    public async checkout(email: string, paymentMethod?: string): Promise<CheckoutResult> {
+    public async checkout(email?: string, paymentMethod?: string): Promise<CheckoutResult> {
         const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
         const paymentResults: Array<PaymentResult> = [];
         const canCheckout = new CanCheckout();
