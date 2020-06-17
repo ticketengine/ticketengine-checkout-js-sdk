@@ -36,23 +36,44 @@ export class IsCheckedOut implements OrderValidator {
     }
 }
 
-export class HasPendingItems implements OrderValidator {
+export class HasItemsWithStatus implements OrderValidator {
+    private readonly status: LineItemStatus[];
+
+    constructor(status: LineItemStatus[]) {
+        this.status = status;
+    }
+
     validate(order: Order): Boolean {
         if(!order || !order.lineItems) {
             return false;
         }
         return order.lineItems.filter((item) => {
-            const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.pending, LineItemStatus.awaitingClaim];
-            return pendingStatusses.includes(item.status)
+            // const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.pending, LineItemStatus.awaitingClaim];
+            return this.status.includes(item.status)
         }).length > 0
     }
 }
 
-export class HasReservedItems implements OrderValidator {
-    private readonly orderLineIds: string[];
+// export class HasPendingItems implements OrderValidator {
+//     validate(order: Order): Boolean {
+//         if(!order || !order.lineItems) {
+//             return false;
+//         }
+//         return order.lineItems.filter((item) => {
+//             const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.pending, LineItemStatus.awaitingClaim];
+//             return pendingStatusses.includes(item.status)
+//         }).length > 0
+//     }
+// }
 
-    constructor(orderLineIds: string[]) {
+
+export class ItemsHaveStatus implements OrderValidator {
+    private readonly orderLineIds: string[];
+    private status: LineItemStatus;
+
+    constructor(orderLineIds: string[], status: LineItemStatus) {
         this.orderLineIds = orderLineIds;
+        this.status = status;
     }
 
     validate(order: Order): Boolean {
@@ -60,27 +81,64 @@ export class HasReservedItems implements OrderValidator {
             return false;
         }
         for(let i = 0; i < this.orderLineIds.length; i++){
-            if(!order.lineItems.filter(l => l.status === LineItemStatus.reserved).map(l => l.id).includes(this.orderLineIds[i])) return false;
+            if(!order.lineItems.filter(l => l.status === this.status).map(l => l.id).includes(this.orderLineIds[i])) return false;
         }
         return true;
     }
 }
 
-export class HasRemovedItems implements OrderValidator {
-    private readonly orderLineIds: string[];
+// export class HasReservedItems implements OrderValidator {
+//     private readonly orderLineIds: string[];
+//
+//     constructor(orderLineIds: string[]) {
+//         this.orderLineIds = orderLineIds;
+//     }
+//
+//     validate(order: Order): Boolean {
+//         if(!order || !order.lineItems) {
+//             return false;
+//         }
+//         for(let i = 0; i < this.orderLineIds.length; i++){
+//             if(!order.lineItems.filter(l => l.status === LineItemStatus.reserved).map(l => l.id).includes(this.orderLineIds[i])) return false;
+//         }
+//         return true;
+//     }
+// }
 
-    constructor(orderLineIds: string[]) {
-        this.orderLineIds = orderLineIds;
+// export class HasRemovedItems implements OrderValidator {
+//     private readonly orderLineIds: string[];
+//
+//     constructor(orderLineIds: string[]) {
+//         this.orderLineIds = orderLineIds;
+//     }
+//
+//     validate(order: Order): Boolean {
+//         if(!order || !order.lineItems) {
+//             return false;
+//         }
+//         for(let i = 0; i < this.orderLineIds.length; i++){
+//             if(!order.lineItems.filter(l => l.status === LineItemStatus.removed).map(l => l.id).includes(this.orderLineIds[i])) return false;
+//         }
+//         return true;
+//     }
+// }
+
+export class ValidateItemsStatus implements OrderValidator {
+    private readonly reservedOrderLineIds: string[];
+    private readonly removedOrderLineIds: string[];
+    private readonly completedOrderLineIds: string[];
+
+    constructor(reservedOrderLineIds: string[] = [], removedOrderLineIds: string[] = [], completedOrderLineIds: string[] = []) {
+        this.reservedOrderLineIds = reservedOrderLineIds;
+        this.removedOrderLineIds = removedOrderLineIds;
+        this.completedOrderLineIds = completedOrderLineIds;
     }
 
     validate(order: Order): Boolean {
-        if(!order || !order.lineItems) {
-            return false;
-        }
-        for(let i = 0; i < this.orderLineIds.length; i++){
-            if(!order.lineItems.filter(l => l.status === LineItemStatus.removed).map(l => l.id).includes(this.orderLineIds[i])) return false;
-        }
-        return true;
+        const reservedValidator = new ItemsHaveStatus(this.reservedOrderLineIds, LineItemStatus.reserved);
+        const removedValidator = new ItemsHaveStatus(this.removedOrderLineIds, LineItemStatus.removed);
+        const completedValidator = new ItemsHaveStatus(this.completedOrderLineIds, LineItemStatus.completed);
+        return reservedValidator.validate(order) && removedValidator.validate(order) && completedValidator.validate(order)
     }
 }
 
@@ -113,7 +171,8 @@ export class IsProcessingPayment implements OrderValidator {
 export class CanCheckout implements OrderValidator {
     validate(order: Order): Boolean {
         const isEmpty: IsEmpty = new IsEmpty();
-        const hasPendingItems: HasPendingItems = new HasPendingItems();
+        // const hasPendingItems: HasPendingItems = new HasPendingItems();
+        const hasPendingItems: HasItemsWithStatus = new HasItemsWithStatus([LineItemStatus.pending, LineItemStatus.awaitingClaim]);
         return order && order.status === OrderStatus.pending
             && !isEmpty.validate(order)
             && !hasPendingItems.validate(order)
@@ -123,7 +182,8 @@ export class CanCheckout implements OrderValidator {
 export class CanPay implements OrderValidator {
     validate(order: Order): Boolean {
         const isEmpty: IsEmpty = new IsEmpty();
-        const hasPendingItems: HasPendingItems = new HasPendingItems();
+        // const hasPendingItems: HasPendingItems = new HasPendingItems();
+        const hasPendingItems: HasItemsWithStatus = new HasItemsWithStatus([LineItemStatus.pending, LineItemStatus.awaitingClaim]);
         return order && order.paymentStatus !== PaymentStatus.paid
             && (order.status === OrderStatus.pending || order.status === OrderStatus.checkOut)
             && !isEmpty.validate(order)

@@ -1,8 +1,8 @@
 import {WebClient} from "ticketengine-sdk";
 import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
-import {Customer, EventPrice, Order} from "./Model";
-import {OrderValidator, CanCheckout, CanPay, HasToken, HasReservedItems, HasRemovedItems} from "./OrderValidator";
-
+import {Customer, EventPrice, LineItemStatus, Order} from "./Model";
+import {CanCheckout, CanPay, HasToken, ItemsHaveStatus, OrderValidator, ValidateItemsStatus} from "./OrderValidator";
+import {RemoveItemFromCartResponse} from "ticketengine-sdk/dist/command/order";
 
 
 export class Cart {
@@ -14,6 +14,7 @@ export class Cart {
     oauthClientId: string;
     oauthClientSecret: string;
     oauthScope: string;
+    retryPolicy: number[] = [0, 500, 1000, 1000, 1000, 1000, 1000, 3000, 3000, 3000, 5000, 5000];
 
     // constructor(salesChannelId: string, registerId: string, customerId?: string, clientId?: string, clientSecret?: string, scope?: string, authApiUrl?: string, adminApiUrl?: string, graphApiUrl?: string) {
     constructor(options: CartOptions) {
@@ -127,7 +128,7 @@ export class Cart {
     public async createOrder(): Promise<void> {
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
-        await this.fetchOrder(response.data.orderId, undefined, [0, 1000, 1000, 1000, 3000, 5000])
+        await this.fetchOrder(response.data.orderId, undefined, this.retryPolicy)
     }
 
 
@@ -135,56 +136,78 @@ export class Cart {
         if(!orderId) {
             orderId = this.getOrderId()
         }
-        await this.client.order.cancelOrder({aggregateId: orderId}, [0, 1000, 1000, 1000, 3000, 5000]);
+        await this.client.order.cancelOrder({aggregateId: orderId}, this.retryPolicy);
         if(this.hasOrder() && this.getOrderId() === orderId) {
             localStorage.removeItem("te-order");
         }
     }
 
 
-    public async addItems(cartItems: Array<CartItem>): Promise<void> {
-        const retryPolicy = [0, 0, 0, 1000, 5000];
-        const orderLineIds = [];
+    public async addItems(items: Array<AddItem>): Promise<void> {
+        const orderLineIds = await Promise.all(items.map(item => {
+            return this.addItem(item);
+        }));
+
+        const validator = new ItemsHaveStatus(orderLineIds, LineItemStatus.reserved);
+        await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
+    }
+
+
+    private async addItem(item: AddItem): Promise<string> {
+        let orderLineId = undefined;
 
         if(!this.hasOrder()) {
             await this.createOrder();
         }
 
-        for (let index = 0; index < cartItems.length; index++) {
-            const cartItem = cartItems[index];
-            if(Cart.isAccessCartItem(cartItem)) {
-                const response = await this.client.order.addAccessToCart({
-                    aggregateId: this.getOrderId(),
-                    eventManagerId: cartItem.eventManagerId,
-                    eventId: cartItem.eventId,
-                    accessDefinitionId: cartItem.accessDefinitionId,
-                    // capacityLocationPath: cartItem.capacityLocationPath,
-                    requestedConditionPath: cartItem.requestedConditionPath,
-                }, retryPolicy);
-                orderLineIds.push(response.data.orderLineItemId);
-            }
-            if(Cart.isProductCartItem(cartItem)) {
-
-            }
+        if(Cart.isAccessCartItem(item)) {
+            const response = await this.client.order.addAccessToCart({
+                aggregateId: this.getOrderId(),
+                eventManagerId: item.eventManagerId,
+                eventId: item.eventId,
+                accessDefinitionId: item.accessDefinitionId,
+                // capacityLocationPath: cartItem.capacityLocationPath,
+                requestedConditionPath: item.requestedConditionPath,
+            }, this.retryPolicy);
+            orderLineId = response.data.orderLineItemId;
+        // } else if(Cart.isProductCartItem(item)) {
+        } else {
+            throw new Error('Cannot add item. Unknown item type.');
         }
 
-        const validator = new HasReservedItems(orderLineIds);
-        await this.fetchOrder(this.getOrderId(), validator, [500, 1000, 1000, 1000, 3000, 5000]);
+        return orderLineId;
     }
 
 
-    public async removeItems(orderLineItemIds: Array<string>): Promise<void> {
-        const orderLineIds = [];
-        for (let i = 0; i < orderLineItemIds.length; i++) {
-            await this.client.order.removeItemFromCart({
-                aggregateId: this.getOrderId(),
-                orderLineItemId: orderLineItemIds[i]
-            }, [0, 500, 1000, 1000, 1000, 3000, 5000]);
-            orderLineIds.push(orderLineItemIds[i]);
-        }
+    public async removeItems(items: Array<RemoveItem>): Promise<void> {
+        await Promise.all(items.map(item => {
+            return this.removeItem(item);
+        }));
 
-        const validator = new HasRemovedItems(orderLineItemIds);
-        await this.fetchOrder(this.getOrderId(), validator, [500, 1000, 1000, 1000, 3000, 5000]);
+        const validator = new ItemsHaveStatus(items.map(i => i.orderLineItemId), LineItemStatus.removed);
+        await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
+    }
+
+
+    private async removeItem(item: RemoveItem): Promise<RemoveItemFromCartResponse> {
+        return this.client.order.removeItemFromCart({
+            aggregateId: this.getOrderId(),
+            orderLineItemId: item.orderLineItemId
+        }, this.retryPolicy);
+    }
+
+
+    public async changeItems(addItems: Array<AddItem> = [], removeItems: Array<RemoveItem>): Promise<void> {
+        const addedOrderLineIds = await Promise.all(addItems.map(item => {
+            return this.addItem(item);
+        }));
+
+        await Promise.all(removeItems.map(item => {
+            return this.removeItem(item);
+        }));
+
+        const validator = new ValidateItemsStatus(addedOrderLineIds, removeItems.map(i => i.orderLineItemId));
+        await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
     }
 
 
@@ -199,12 +222,11 @@ export class Cart {
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
 
         const validator = new HasToken(token);
-        await this.getOrder(orderId, validator, [500, 1000, 1000, 1000, 3000, 5000])
+        await this.getOrder(orderId, validator, this.retryPolicy)
     }
 
 
     public async checkout(email?: string, paymentMethod?: string): Promise<CheckoutResult> {
-        const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
         const paymentResults: Array<PaymentResult> = [];
         const canCheckout = new CanCheckout();
         const canPay = new CanPay();
@@ -216,7 +238,7 @@ export class Cart {
             await this.client.order.checkoutOrder({
                 aggregateId: orderId,
                 customerEmail: email
-            }, retryPolicy)
+            }, this.retryPolicy)
         }
 
         // pay if needed
@@ -238,7 +260,6 @@ export class Cart {
 
 
     private async createPayment(currency: string, amount: number, method?: string): Promise<PaymentResult> {
-        const retryPolicy = [0, 1000, 1000, 1000, 3000, 5000];
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         let paymentId = undefined;
         let action = undefined;
@@ -249,7 +270,7 @@ export class Cart {
                 currency,
                 amount,
                 customerId
-            }, retryPolicy);
+            }, this.retryPolicy);
             paymentId = response.data.paymentId;
         }
         if(method === 'pin') {
@@ -258,7 +279,7 @@ export class Cart {
                 currency,
                 amount,
                 customerId
-            }, retryPolicy);
+            }, this.retryPolicy);
             paymentId = response.data.paymentId;
         }
         if(method !== 'cash' && method !== 'pin') {
@@ -268,7 +289,7 @@ export class Cart {
                 amount,
                 customerId,
                 paymentMethod: method
-            }, retryPolicy);
+            }, this.retryPolicy);
             paymentId = response.data.paymentId;
             action = {paymentUrl: response.data.paymentUrl};
         }
@@ -399,12 +420,12 @@ export class Cart {
 
 
 
-    private static isAccessCartItem(item: CartItem): item is AccessCartItem {
-        return (item as AccessCartItem).eventId !== undefined;
+    private static isAccessCartItem(item: AddItem): item is AddAccessItem {
+        return (item as AddAccessItem).eventId !== undefined;
     }
 
-    private static isProductCartItem(item: CartItem): item is ProductCartItem {
-        return (item as ProductCartItem).productId !== undefined;
+    private static isProductCartItem(item: AddItem): item is AddProductItem {
+        return (item as AddProductItem).productId !== undefined;
     }
 
     private async sleep(ms: number): Promise<any> {
@@ -429,12 +450,12 @@ export interface CartOptions {
 
 
 
-export interface CartItem {
+export interface AddItem {
 
 }
 
 
-export interface AccessCartItem extends CartItem {
+export interface AddAccessItem extends AddItem {
     eventManagerId: string;
     eventId: string;
     accessDefinitionId: string;
@@ -442,11 +463,13 @@ export interface AccessCartItem extends CartItem {
     capacityLocationPath?: string;
 }
 
-
-export interface ProductCartItem extends CartItem {
+export interface AddProductItem extends AddItem {
     productId: string;
 }
 
+export interface RemoveItem {
+    orderLineItemId: string;
+}
 
 export interface CheckoutResult {
     paymentResults: Array<PaymentResult>;
