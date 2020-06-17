@@ -350,12 +350,12 @@ export class Cart {
 
     public setCustomer(customerId: string): Promise<void> {
         Cart.setCustomerId(customerId);
-        return new Promise(() => '')
+        return new Promise((resolve) => resolve())
     }
 
     public removeCustomer(): Promise<void> {
         localStorage.removeItem("te-customer-id");
-        return new Promise(() => '')
+        return new Promise((resolve) => resolve())
     }
 
     private static setCustomerId(customerId: string): void {
