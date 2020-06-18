@@ -144,6 +144,9 @@ export class ValidateItemsStatus implements OrderValidator {
 
 export class IsEmpty implements OrderValidator {
     validate(order: Order): Boolean {
+        if(!order || !order.lineItems) {
+            return true;
+        }
         return order.lineItems.filter((item) => {
             // const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.reserved];
             // return pendingStatusses.includes(item.status)
