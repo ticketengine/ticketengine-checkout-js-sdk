@@ -144,14 +144,16 @@ export class ValidateItemsStatus implements OrderValidator {
 
 export class IsEmpty implements OrderValidator {
     validate(order: Order): Boolean {
-        // return order.lineItems.filter((item) => {
-        //     const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.reserved];
-        //     return pendingStatusses.includes(item.status)
-        // }).length === 0
-        if(!order || !order.lineItems) {
-            return true;
-        }
-        return order.lineItems.length === 0
+        return order.lineItems.filter((item) => {
+            // const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.reserved];
+            // return pendingStatusses.includes(item.status)
+            const status: Array<LineItemStatus> = [LineItemStatus.removed];
+            return !status.includes(item.status)
+        }).length === 0
+        // if(!order || !order.lineItems) {
+        //     return true;
+        // }
+        // return order.lineItems.length === 0
     }
 }
 
