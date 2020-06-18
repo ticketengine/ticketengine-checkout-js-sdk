@@ -144,6 +144,10 @@ export class Cart {
 
 
     public async addItems(items: Array<AddItem>): Promise<void> {
+        if(!this.hasOrder()) {
+            await this.createOrder();
+        }
+
         const orderLineIds = await Promise.all(items.map(item => {
             return this.addItem(item);
         }));
@@ -155,10 +159,6 @@ export class Cart {
 
     private async addItem(item: AddItem): Promise<string> {
         let orderLineId = undefined;
-
-        if(!this.hasOrder()) {
-            await this.createOrder();
-        }
 
         if(Cart.isAccessCartItem(item)) {
             const response = await this.client.order.addAccessToCart({
