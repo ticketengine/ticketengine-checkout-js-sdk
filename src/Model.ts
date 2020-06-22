@@ -23,6 +23,7 @@ export enum LineItemStatus {
     reserved = 'reserved',
     completed = 'completed',
     removed = 'removed',
+    returned = 'returned',
 }
 
 export enum LineItemType {

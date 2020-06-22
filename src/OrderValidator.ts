@@ -150,7 +150,7 @@ export class IsEmpty implements OrderValidator {
         return order.lineItems.filter((item) => {
             // const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.reserved];
             // return pendingStatusses.includes(item.status)
-            const status: Array<LineItemStatus> = [LineItemStatus.removed];
+            const status: Array<LineItemStatus> = [LineItemStatus.removed, LineItemStatus.returned];
             return !status.includes(item.status)
         }).length === 0
         // if(!order || !order.lineItems) {
@@ -162,7 +162,7 @@ export class IsEmpty implements OrderValidator {
 
 export class IsInFinalState implements OrderValidator {
     validate(order: Order): Boolean {
-        const finalStates: Array<OrderStatus> = [OrderStatus.completed, OrderStatus.canceled, OrderStatus.timeout, OrderStatus.failed, OrderStatus.reserved];
+        const finalStates: Array<OrderStatus> = [OrderStatus.completed, OrderStatus.canceled, OrderStatus.timeout, OrderStatus.failed];
         return order && finalStates.includes(order.status);
     }
 }

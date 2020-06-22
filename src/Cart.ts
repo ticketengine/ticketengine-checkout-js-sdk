@@ -1,7 +1,15 @@
 import {WebClient} from "ticketengine-sdk";
 import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
 import {Customer, EventPrice, LineItemStatus, Order} from "./Model";
-import {CanCheckout, CanPay, HasToken, ItemsHaveStatus, OrderValidator, ValidateItemsStatus} from "./OrderValidator";
+import {
+    CanCheckout,
+    CanPay,
+    HasToken,
+    IsInFinalState,
+    ItemsHaveStatus,
+    OrderValidator,
+    ValidateItemsStatus
+} from "./OrderValidator";
 import {RemoveItemFromCartResponse} from "ticketengine-sdk/dist/command/order";
 
 
@@ -28,7 +36,7 @@ export class Cart {
         // this.customerId = options.customerId;
         this.oauthClientId = options.clientId || 'shopping_cart';
         this.oauthClientSecret = options.clientSecret || '';
-        this.oauthScope = options.scope || 'order:write payment:write event:read order:read';
+        this.oauthScope = options.scope || 'order:write payment:write event:read order:read order:reserve';
         if(options.salesChannelId) this.setSalesChannelId(options.salesChannelId);
         if(options.registerId) this.setRegisterId(options.registerId);
         if(options.customerId) Cart.setCustomerId(options.customerId);
@@ -75,31 +83,11 @@ export class Cart {
             await this.fetchOrder(orderId, validator, retryPolicy);
         }
 
-        const o = localStorage.getItem("te-order");
-        if(!o) {
+        const order = localStorage.getItem("te-order");
+        if(!order) {
             throw new Error('No order found.');
         }
-        return JSON.parse(o);
-
-
-        // const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
-        // const response = await this.client.sendQuery<GetOrderResponse>(query, []);
-        //
-        // // check if order is in desired state
-        // // if not in desired state, retry query
-        // if(validator && !validator.validate(response.data.order)) {
-        //     const sleepTime = retryPolicy.shift();
-        //
-        //     // abort retry, retries attempts exceeded
-        //     if(sleepTime === undefined) throw new Error('Retry attempts exceeded.');
-        //
-        //     // retry
-        //     await this.sleep(sleepTime); // wait x milliseconds
-        //     return await this.getOrder(orderId, validator, retryPolicy)
-        // }
-        //
-        // this.setOrderId(orderId);
-        // return response.data.order;
+        return JSON.parse(order);
     }
 
 
@@ -144,7 +132,10 @@ export class Cart {
 
 
     public async addItems(items: Array<AddItem>): Promise<void> {
-        if(!this.hasOrder()) {
+        const orderId = this.getOrderId();
+        const isInFinalState = new IsInFinalState();
+
+        if(!this.hasOrder() || (this.hasOrder() && isInFinalState.validate(await this.getOrder(orderId)))) {
             await this.createOrder();
         }
 
@@ -211,18 +202,27 @@ export class Cart {
     }
 
 
+    public async getItemCount(): Promise<number> {
+        if(this.hasOrder()) {
+            const order = await this.getOrder(this.getOrderId());
+            return order.lineItems.filter(item => item.status !== LineItemStatus.removed && item.status !== LineItemStatus.returned).length
+        }
+        return 0;
+    }
+
+
     public async addToken(token: string): Promise<void> {
         const retryPolicy = [0, 1000, 1000, 1000];
+        const orderId = this.getOrderId();
+        const isInFinalState = new IsInFinalState();
+        const hasToken = new HasToken(token);
 
-        if(!this.hasOrder()) {
+        if(!this.hasOrder() || (this.hasOrder() && isInFinalState.validate(await this.getOrder(orderId)))) {
             await this.createOrder();
         }
 
-        const orderId = this.getOrderId();
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
-
-        const validator = new HasToken(token);
-        await this.getOrder(orderId, validator, this.retryPolicy)
+        await this.getOrder(orderId, hasToken, this.retryPolicy)
     }
 
 
@@ -348,13 +348,22 @@ export class Cart {
 
 
 
-    public setCustomer(customerId: string): Promise<void> {
+    public async setCustomer(customerId: string): Promise<void> {
         Cart.setCustomerId(customerId);
+        if(this.hasOrder()) {
+            await this.client.order.assignOrderToCustomer({
+                aggregateId: this.getOrderId(),
+                customerId: customerId
+            }, this.retryPolicy);
+        }
         return new Promise((resolve) => resolve())
     }
 
-    public removeCustomer(): Promise<void> {
+    public async removeCustomer(): Promise<void> {
         localStorage.removeItem("te-customer-id");
+        if(this.hasOrder()) {
+            await this.client.order.unassignOrderFromCustomer({aggregateId: this.getOrderId()}, this.retryPolicy);
+        }
         return new Promise((resolve) => resolve())
     }
 
