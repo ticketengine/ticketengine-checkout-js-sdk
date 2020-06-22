@@ -36,6 +36,12 @@ export class IsCheckedOut implements OrderValidator {
     }
 }
 
+export class HasCustomer implements OrderValidator {
+    validate(order: Order): Boolean {
+        return order && order.customer;
+    }
+}
+
 export class HasItemsWithStatus implements OrderValidator {
     private readonly status: LineItemStatus[];
 
