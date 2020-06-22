@@ -348,20 +348,20 @@ export class Cart {
 
 
     public async setCustomer(customerId: string): Promise<void> {
-        // if(this.hasOrder() && !this.hasCustomerId()) {
-        //     await this.client.order.assignToCustomer({
-        //         aggregateId: this.getOrderId(),
-        //         customerId: customerId
-        //     }, this.retryPolicy);
-        // }
+        if(this.hasOrder() && !this.hasCustomerId()) {
+            await this.client.order.assignToCustomer({
+                aggregateId: this.getOrderId(),
+                customerId: customerId
+            }, this.retryPolicy);
+        }
         Cart.setCustomerId(customerId);
         return new Promise((resolve) => resolve())
     }
 
     public async removeCustomer(): Promise<void> {
-        // if(this.hasOrder() && !this.hasCustomerId()) {
-        //     await this.client.order.unassignFromCustomer({aggregateId: this.getOrderId()}, this.retryPolicy);
-        // }
+        if(this.hasOrder() && !this.hasCustomerId()) {
+            await this.client.order.unassignFromCustomer({aggregateId: this.getOrderId()}, this.retryPolicy);
+        }
         localStorage.removeItem("te-customer-id");
         return new Promise((resolve) => resolve())
     }
