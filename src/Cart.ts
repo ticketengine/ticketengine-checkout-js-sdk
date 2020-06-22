@@ -132,10 +132,9 @@ export class Cart {
 
 
     public async addItems(items: Array<AddItem>): Promise<void> {
-        const orderId = this.getOrderId();
         const isInFinalState = new IsInFinalState();
 
-        if(!this.hasOrder() || (this.hasOrder() && isInFinalState.validate(await this.getOrder(orderId)))) {
+        if(!this.hasOrder() || (this.hasOrder() && isInFinalState.validate(await this.getOrder(this.getOrderId())))) {
             await this.createOrder();
         }
 
@@ -213,14 +212,14 @@ export class Cart {
 
     public async addToken(token: string): Promise<void> {
         const retryPolicy = [0, 1000, 1000, 1000];
-        const orderId = this.getOrderId();
         const isInFinalState = new IsInFinalState();
         const hasToken = new HasToken(token);
 
-        if(!this.hasOrder() || (this.hasOrder() && isInFinalState.validate(await this.getOrder(orderId)))) {
+        if(!this.hasOrder() || (this.hasOrder() && isInFinalState.validate(await this.getOrder(this.getOrderId())))) {
             await this.createOrder();
         }
 
+        const orderId = this.getOrderId();
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
         await this.getOrder(orderId, hasToken, this.retryPolicy)
     }
