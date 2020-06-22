@@ -3,7 +3,7 @@ import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderR
 import {Customer, EventPrice, LineItemStatus, Order} from "./Model";
 import {
     CanCheckout,
-    CanPay, HasCustomer,
+    CanPay, CanReserve, HasCustomer,
     HasToken,
     IsInFinalState,
     ItemsHaveStatus,
@@ -222,6 +222,21 @@ export class Cart {
         const orderId = this.getOrderId();
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
         await this.getOrder(orderId, hasToken, this.retryPolicy)
+    }
+
+
+    public async reserve(email?: string, timeoutOn?: string): Promise<void> {
+        const canReserve = new CanReserve();
+        const orderId = this.getOrderId();
+        const order = await this.getOrder(orderId);
+
+        if(canReserve.validate(order)) {
+            await this.client.order.reserveOrder({
+                aggregateId: orderId,
+                timeoutOn: timeoutOn,
+                customerEmail: email
+            }, this.retryPolicy)
+        }
     }
 
 

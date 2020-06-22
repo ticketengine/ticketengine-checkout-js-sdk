@@ -185,6 +185,16 @@ export class IsProcessingPayment implements OrderValidator {
     }
 }
 
+export class CanReserve implements OrderValidator {
+    validate(order: Order): Boolean {
+        const isEmpty: IsEmpty = new IsEmpty();
+        const hasPendingItems: HasItemsWithStatus = new HasItemsWithStatus([LineItemStatus.pending, LineItemStatus.awaitingClaim]);
+        return order && (order.status === OrderStatus.pending)
+            && !isEmpty.validate(order)
+            && !hasPendingItems.validate(order)
+    }
+}
+
 export class CanCheckout implements OrderValidator {
     validate(order: Order): Boolean {
         const isEmpty: IsEmpty = new IsEmpty();
