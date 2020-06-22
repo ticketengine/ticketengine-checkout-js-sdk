@@ -3,7 +3,7 @@ import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderR
 import {Customer, EventPrice, LineItemStatus, Order} from "./Model";
 import {
     CanCheckout,
-    CanPay,
+    CanPay, HasCustomer,
     HasToken,
     IsInFinalState,
     ItemsHaveStatus,
@@ -349,7 +349,7 @@ export class Cart {
 
     public async setCustomer(customerId: string): Promise<void> {
         if(this.hasOrder() && !this.hasCustomerId()) {
-            await this.client.order.assignOrderToCustomer({
+            await this.client.order.assignToCustomer({
                 aggregateId: this.getOrderId(),
                 customerId: customerId
             }, this.retryPolicy);
@@ -360,7 +360,7 @@ export class Cart {
 
     public async removeCustomer(): Promise<void> {
         if(this.hasOrder() && !this.hasCustomerId()) {
-            await this.client.order.unassignOrderFromCustomer({aggregateId: this.getOrderId()}, this.retryPolicy);
+            await this.client.order.unassignFromCustomer({aggregateId: this.getOrderId()}, this.retryPolicy);
         }
         localStorage.removeItem("te-customer-id");
         return new Promise((resolve) => resolve())
