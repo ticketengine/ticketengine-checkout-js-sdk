@@ -348,21 +348,21 @@ export class Cart {
 
 
     public async setCustomer(customerId: string): Promise<void> {
-        Cart.setCustomerId(customerId);
-        if(this.hasOrder()) {
+        if(this.hasOrder() && !this.hasCustomerId()) {
             await this.client.order.assignOrderToCustomer({
                 aggregateId: this.getOrderId(),
                 customerId: customerId
             }, this.retryPolicy);
         }
+        Cart.setCustomerId(customerId);
         return new Promise((resolve) => resolve())
     }
 
     public async removeCustomer(): Promise<void> {
-        localStorage.removeItem("te-customer-id");
-        if(this.hasOrder()) {
+        if(this.hasOrder() && !this.hasCustomerId()) {
             await this.client.order.unassignOrderFromCustomer({aggregateId: this.getOrderId()}, this.retryPolicy);
         }
+        localStorage.removeItem("te-customer-id");
         return new Promise((resolve) => resolve())
     }
 
