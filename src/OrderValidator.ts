@@ -36,6 +36,12 @@ export class IsCheckedOut implements OrderValidator {
     }
 }
 
+export class IsReserved implements OrderValidator {
+    validate(order: Order): Boolean {
+        return order && order.status === OrderStatus.reserved;
+    }
+}
+
 export class HasCustomer implements OrderValidator {
     validate(order: Order): Boolean {
         return order && order.customer;
