@@ -42,9 +42,52 @@ export class IsReserved implements OrderValidator {
     }
 }
 
+export class IsEmpty implements OrderValidator {
+    validate(order: Order): Boolean {
+        if(!order || !order.lineItems) {
+            return true;
+        }
+        return order.lineItems.filter((item) => {
+            // const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.reserved];
+            // return pendingStatusses.includes(item.status)
+            const status: Array<LineItemStatus> = [LineItemStatus.removed, LineItemStatus.returned];
+            return !status.includes(item.status)
+        }).length === 0
+        // if(!order || !order.lineItems) {
+        //     return true;
+        // }
+        // return order.lineItems.length === 0
+    }
+}
+
+export class IsInFinalState implements OrderValidator {
+    validate(order: Order): Boolean {
+        const finalStates: Array<OrderStatus> = [OrderStatus.completed, OrderStatus.canceled, OrderStatus.timeout, OrderStatus.failed];
+        return order && finalStates.includes(order.status);
+    }
+}
+
+export class IsProcessingPayment implements OrderValidator {
+    validate(order: Order): Boolean {
+        return order && order.status === OrderStatus.checkOut && order.paymentStatus !== PaymentStatus.paid
+    }
+}
+
 export class HasCustomer implements OrderValidator {
     validate(order: Order): Boolean {
         return order && order.customer;
+    }
+}
+
+export class HasToken implements OrderValidator {
+    private readonly token: string;
+
+    constructor(token: string) {
+        this.token = token;
+    }
+
+    validate(order: Order): Boolean {
+        return order && order.tokens ? order.tokens.map(t => t.token).includes(this.token) : false;
     }
 }
 
@@ -99,41 +142,19 @@ export class ItemsHaveStatus implements OrderValidator {
     }
 }
 
-// export class HasReservedItems implements OrderValidator {
-//     private readonly orderLineIds: string[];
-//
-//     constructor(orderLineIds: string[]) {
-//         this.orderLineIds = orderLineIds;
-//     }
-//
-//     validate(order: Order): Boolean {
-//         if(!order || !order.lineItems) {
-//             return false;
-//         }
-//         for(let i = 0; i < this.orderLineIds.length; i++){
-//             if(!order.lineItems.filter(l => l.status === LineItemStatus.reserved).map(l => l.id).includes(this.orderLineIds[i])) return false;
-//         }
-//         return true;
-//     }
-// }
 
-// export class HasRemovedItems implements OrderValidator {
-//     private readonly orderLineIds: string[];
-//
-//     constructor(orderLineIds: string[]) {
-//         this.orderLineIds = orderLineIds;
-//     }
-//
-//     validate(order: Order): Boolean {
-//         if(!order || !order.lineItems) {
-//             return false;
-//         }
-//         for(let i = 0; i < this.orderLineIds.length; i++){
-//             if(!order.lineItems.filter(l => l.status === LineItemStatus.removed).map(l => l.id).includes(this.orderLineIds[i])) return false;
-//         }
-//         return true;
-//     }
-// }
+export class needsPaymentWithCurrency implements OrderValidator {
+    private readonly currencyCode: string;
+
+    constructor(currencyCode: string) {
+        this.currencyCode = currencyCode;
+    }
+
+    validate(order: Order): Boolean {
+        return order && order.requiredPayments ? order.requiredPayments.map((p) => p.currency).includes(this.currencyCode) : false;
+    }
+}
+
 
 export class ValidateItemsStatus implements OrderValidator {
     private readonly reservedOrderLineIds: string[];
@@ -151,37 +172,6 @@ export class ValidateItemsStatus implements OrderValidator {
         const removedValidator = new ItemsHaveStatus(this.removedOrderLineIds, LineItemStatus.removed);
         const completedValidator = new ItemsHaveStatus(this.completedOrderLineIds, LineItemStatus.completed);
         return reservedValidator.validate(order) && removedValidator.validate(order) && completedValidator.validate(order)
-    }
-}
-
-export class IsEmpty implements OrderValidator {
-    validate(order: Order): Boolean {
-        if(!order || !order.lineItems) {
-            return true;
-        }
-        return order.lineItems.filter((item) => {
-            // const pendingStatusses: Array<LineItemStatus> = [LineItemStatus.reserved];
-            // return pendingStatusses.includes(item.status)
-            const status: Array<LineItemStatus> = [LineItemStatus.removed, LineItemStatus.returned];
-            return !status.includes(item.status)
-        }).length === 0
-        // if(!order || !order.lineItems) {
-        //     return true;
-        // }
-        // return order.lineItems.length === 0
-    }
-}
-
-export class IsInFinalState implements OrderValidator {
-    validate(order: Order): Boolean {
-        const finalStates: Array<OrderStatus> = [OrderStatus.completed, OrderStatus.canceled, OrderStatus.timeout, OrderStatus.failed];
-        return order && finalStates.includes(order.status);
-    }
-}
-
-export class IsProcessingPayment implements OrderValidator {
-    validate(order: Order): Boolean {
-        return order && order.status === OrderStatus.checkOut && order.paymentStatus !== PaymentStatus.paid
     }
 }
 
@@ -215,18 +205,6 @@ export class CanPay implements OrderValidator {
             && (order.status === OrderStatus.pending || order.status === OrderStatus.reserved || order.status === OrderStatus.checkOut)
             && !isEmpty.validate(order)
             && !hasPendingItems.validate(order)
-    }
-}
-
-export class HasToken implements OrderValidator {
-    private readonly token: string;
-
-    constructor(token: string) {
-        this.token = token;
-    }
-
-    validate(order: Order): Boolean {
-        return order && order.tokens ? order.tokens.map(t => t.token).includes(this.token) : false;
     }
 }
 

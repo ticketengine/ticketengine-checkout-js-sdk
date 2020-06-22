@@ -273,6 +273,11 @@ export class Cart {
     // }
 
 
+    // public getRequiredPayments(): void {
+    //     // is anders voor box office als voor online
+    // }
+
+
     private async createPayment(currency: string, amount: number, method?: string): Promise<PaymentResult> {
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         let paymentId = undefined;
