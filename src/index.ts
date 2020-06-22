@@ -27,6 +27,6 @@ export {
     CanReserve,
     CanCheckout,
     CanPay,
-    needsPaymentWithCurrency,
+    NeedsPaymentWithCurrency,
     ValidateItemsStatus,
 } from './OrderValidator';

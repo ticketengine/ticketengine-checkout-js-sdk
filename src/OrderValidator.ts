@@ -143,7 +143,7 @@ export class ItemsHaveStatus implements OrderValidator {
 }
 
 
-export class needsPaymentWithCurrency implements OrderValidator {
+export class NeedsPaymentWithCurrency implements OrderValidator {
     private readonly currencyCode: string;
 
     constructor(currencyCode: string) {
