@@ -190,7 +190,7 @@ export class CanCheckout implements OrderValidator {
         const isEmpty: IsEmpty = new IsEmpty();
         // const hasPendingItems: HasPendingItems = new HasPendingItems();
         const hasPendingItems: HasItemsWithStatus = new HasItemsWithStatus([LineItemStatus.pending, LineItemStatus.awaitingClaim]);
-        return order && order.status === OrderStatus.pending
+        return order && (order.status === OrderStatus.pending || order.status === OrderStatus.reserved)
             && !isEmpty.validate(order)
             && !hasPendingItems.validate(order)
     }
@@ -202,7 +202,7 @@ export class CanPay implements OrderValidator {
         // const hasPendingItems: HasPendingItems = new HasPendingItems();
         const hasPendingItems: HasItemsWithStatus = new HasItemsWithStatus([LineItemStatus.pending, LineItemStatus.awaitingClaim]);
         return order && order.paymentStatus !== PaymentStatus.paid
-            && (order.status === OrderStatus.pending || order.status === OrderStatus.checkOut)
+            && (order.status === OrderStatus.pending || order.status === OrderStatus.reserved || order.status === OrderStatus.checkOut)
             && !isEmpty.validate(order)
             && !hasPendingItems.validate(order)
     }
