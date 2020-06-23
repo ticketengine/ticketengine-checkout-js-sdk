@@ -240,7 +240,8 @@ export class Cart {
     }
 
 
-    public async checkout(email?: string, paymentMethod?: string): Promise<CheckoutResult> {
+    // public async checkout(email?: string, paymentMethod?: string): Promise<CheckoutResult> {
+    public async checkout(email?: string, payments?: Array<Payment>): Promise<CheckoutResult> {
         const paymentResults: Array<PaymentResult> = [];
         const canCheckout = new CanCheckout();
         const canPay = new CanPay();
@@ -248,7 +249,7 @@ export class Cart {
         const order = await this.getOrder(orderId);
 
         // checkout if needed
-        if(canCheckout.validate(order)) {
+        if (canCheckout.validate(order)) {
             await this.client.order.checkoutOrder({
                 aggregateId: orderId,
                 customerEmail: email
@@ -256,10 +257,17 @@ export class Cart {
         }
 
         // pay if needed
-        if(canPay.validate(order) && order.requiredPayments) {
-            for (let index = 0; index < order.requiredPayments.length; index++) {
-                const requiredPayment = order.requiredPayments[index];
-                const paymentResult = await this.createPayment(requiredPayment.currency, requiredPayment.amount, paymentMethod);
+        // if(canPay.validate(order) && order.requiredPayments) {
+            // for (let index = 0; index < order.requiredPayments.length; index++) {
+            //     const requiredPayment = order.requiredPayments[index];
+            //     const paymentResult = await this.createPayment(requiredPayment.currency, requiredPayment.amount, paymentMethod);
+            //     paymentResults.push(paymentResult);
+            // }
+        // }
+        if(canPay.validate(order) && payments) {
+            for (let index = 0; index < payments.length; index++) {
+                const payment = payments[index];
+                const paymentResult = await this.createPayment(payment.currency, payment.amount, payment.method);
                 paymentResults.push(paymentResult);
             }
         }
@@ -501,6 +509,12 @@ export interface RemoveItem {
 
 export interface CheckoutResult {
     paymentResults: Array<PaymentResult>;
+}
+
+export interface Payment {
+    currency: string;
+    amount: number;
+    method: string;
 }
 
 export interface PaymentResult {
