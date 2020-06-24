@@ -5,7 +5,7 @@ import {
     CanCheckout,
     CanPay, CanReserve, HasCustomer,
     HasToken,
-    IsInFinalState, IsPending,
+    IsInFinalState, IsPending, IsReserved,
     ItemsHaveStatus,
     OrderValidator,
     ValidateItemsStatus
@@ -239,6 +239,7 @@ export class Cart {
 
     public async reserve(email?: string, timeoutOn?: string): Promise<void> {
         const canReserve = new CanReserve();
+        const isReserved = new IsReserved();
         const orderId = this.getOrderId();
         const order = await this.getOrder(orderId);
 
@@ -247,7 +248,8 @@ export class Cart {
                 aggregateId: orderId,
                 timeoutOn: timeoutOn,
                 customerEmail: email
-            }, this.retryPolicy)
+            }, this.retryPolicy);
+            await this.fetchOrder(this.getOrderId(), isReserved, this.retryPolicy);
         }
     }
 
