@@ -5,7 +5,7 @@ import {
     CanCheckout,
     CanPay, CanReserve, HasCustomer,
     HasToken,
-    IsInFinalState,
+    IsInFinalState, IsPending,
     ItemsHaveStatus,
     OrderValidator,
     ValidateItemsStatus
@@ -125,9 +125,10 @@ export class Cart {
 
 
     public async createOrder(): Promise<void> {
+        const isPending = new IsPending();
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
-        await this.fetchOrder(response.data.orderId, undefined, this.retryPolicy)
+        await this.fetchOrder(response.data.orderId, isPending, this.retryPolicy)
     }
 
 
