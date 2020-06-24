@@ -36,6 +36,13 @@ export interface RequiredPayment {
     amount: number;
 }
 
+export interface Payment {
+    id: string;
+    currency: string;
+    amount: number;
+    status: string;
+}
+
 export interface AccessDefinition {
     id: string;
     name: string;
@@ -105,6 +112,7 @@ export interface Order {
     tokens?: OrderToken[];
     paymentStatus?: PaymentStatus;
     paymentUrl?: string;
+    payments?: Payment[];
     requiredPayments?: RequiredPayment[];
     lineItems: LineItem[];
 }
