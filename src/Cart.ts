@@ -54,6 +54,17 @@ export class Cart {
         });
     }
 
+    public isTokenExpired(): boolean {
+        return this.client.isTokenExpired()
+    }
+
+    // public checkToken(): void {
+    //     if(this.isTokenExpired()) {
+    //
+    //     }
+    // }
+
+
 
     public async getEvent(eventId: string): Promise<Event> {
         const query = `query { event(id: "${eventId}"){id,eventManagerId,name,description,location,start,end,totalCapacity,availableCapacity} }`;
