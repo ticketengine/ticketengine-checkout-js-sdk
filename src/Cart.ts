@@ -11,6 +11,7 @@ import {
     ValidateItemsStatus
 } from "./OrderValidator";
 import {RemoveItemFromCartResponse} from "ticketengine-sdk/dist/command/order";
+import {IsCheckedOut} from "../dist";
 
 
 export class Cart {
@@ -259,6 +260,7 @@ export class Cart {
         const paymentResults: Array<PaymentResult> = [];
         const canCheckout = new CanCheckout();
         const canPay = new CanPay();
+        const isCheckedOut = new IsCheckedOut();
         const orderId = this.getOrderId();
         const order = await this.getOrder(orderId);
 
@@ -267,7 +269,8 @@ export class Cart {
             await this.client.order.checkoutOrder({
                 aggregateId: orderId,
                 customerEmail: email
-            }, this.retryPolicy)
+            }, this.retryPolicy);
+            await this.fetchOrder(this.getOrderId(), isCheckedOut, this.retryPolicy);
         }
 
         // pay if needed
