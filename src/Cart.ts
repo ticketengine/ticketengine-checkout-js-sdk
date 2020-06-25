@@ -5,13 +5,12 @@ import {
     CanCheckout,
     CanPay, CanReserve, HasCustomer,
     HasToken,
-    IsInFinalState, IsPending, IsReserved,
+    IsInFinalState, IsPending, IsReserved, IsCheckedOut,
     ItemsHaveStatus,
     OrderValidator,
     ValidateItemsStatus
 } from "./OrderValidator";
 import {RemoveItemFromCartResponse} from "ticketengine-sdk/dist/command/order";
-import {IsCheckedOut} from "../dist";
 
 
 export class Cart {
