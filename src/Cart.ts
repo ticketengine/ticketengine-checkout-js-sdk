@@ -233,7 +233,7 @@ export class Cart {
 
         const orderId = this.getOrderId();
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
-        await this.getOrder(orderId, hasToken, this.retryPolicy)
+        await this.fetchOrder(orderId, hasToken, this.retryPolicy);
     }
 
 
