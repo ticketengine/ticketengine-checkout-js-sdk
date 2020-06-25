@@ -179,9 +179,15 @@ export class ValidateItemsStatus implements OrderValidator {
 export class CanReserve implements OrderValidator {
     validate(order: Order): Boolean {
         const isEmpty: IsEmpty = new IsEmpty();
+        const isInFinalState: IsInFinalState = new IsInFinalState();
+        const isCheckedOut: IsCheckedOut = new IsCheckedOut();
+        const isReserved: IsReserved = new IsReserved();
         const hasPendingItems: HasItemsWithStatus = new HasItemsWithStatus([LineItemStatus.pending, LineItemStatus.awaitingClaim]);
         return order && (order.status === OrderStatus.pending)
             && !isEmpty.validate(order)
+            && !isInFinalState.validate(order)
+            && !isCheckedOut.validate(order)
+            && !isReserved.validate(order)
             && !hasPendingItems.validate(order)
     }
 }
