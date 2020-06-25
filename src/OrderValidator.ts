@@ -209,6 +209,14 @@ export class CanPay implements OrderValidator {
     }
 }
 
+export class CanPayOnline implements OrderValidator {
+    validate(order: Order): Boolean {
+        const canPay: CanPay = new CanPay();
+        const paymentCurrencies = order.requiredPayments ? order.requiredPayments.map((rp) => rp.currency) : [];
+        return canPay.validate(order) && !paymentCurrencies.includes('CINEVILLE');
+    }
+}
+
 export class NullValidator implements OrderValidator {
     validate(order: Order): Boolean {
         return true;
