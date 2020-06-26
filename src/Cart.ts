@@ -103,10 +103,7 @@ export class Cart {
 
 
     private async fetchOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = []): Promise<Order> {
-
         try {
-
-
             const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
             const response = await this.client.sendQuery<GetOrderResponse>(query, []);
 
@@ -125,10 +122,7 @@ export class Cart {
 
             Cart.setOrder(response.data.order);
             return response.data.order;
-
-
         } catch (error) {
-
             const sleepTime = retryPolicy.shift();
 
             // abort retry, retries attempts exceeded
@@ -137,7 +131,6 @@ export class Cart {
             // retry
             await this.sleep(sleepTime); // wait x milliseconds
             return await this.fetchOrder(orderId, validator, retryPolicy)
-
         }
     }
 
