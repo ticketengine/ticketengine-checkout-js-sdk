@@ -92,6 +92,18 @@ export class HasToken implements OrderValidator {
     }
 }
 
+export class HasStatus implements OrderValidator {
+    private readonly status: OrderStatus[];
+
+    constructor(status: OrderStatus[]) {
+        this.status = status;
+    }
+
+    validate(order: Order): Boolean {
+        return order && order.status && this.status.includes(order.status)
+    }
+}
+
 export class HasItemsWithStatus implements OrderValidator {
     private readonly status: LineItemStatus[];
 

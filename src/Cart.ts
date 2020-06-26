@@ -1,11 +1,16 @@
 import {WebClient} from "ticketengine-sdk";
 import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
-import {Customer, EventPrice, LineItemStatus, Order} from "./Model";
+import {Customer, EventPrice, LineItemStatus, Order, OrderStatus} from "./Model";
 import {
     CanCheckout,
-    CanPay, CanReserve, HasCustomer,
+    CanPay,
+    CanReserve,
+    HasStatus,
     HasToken,
-    IsInFinalState, IsPending, IsReserved, IsCheckedOut,
+    IsCheckedOut,
+    IsInFinalState,
+    IsPending,
+    IsReserved,
     ItemsHaveStatus,
     OrderValidator,
     ValidateItemsStatus
@@ -111,26 +116,18 @@ export class Cart {
             // if not in desired state, retry query
             if(validator && !validator.validate(response.data.order)) {
                 const sleepTime = retryPolicy.shift();
-
-                // abort retry, retries attempts exceeded
-                if(sleepTime === undefined) throw new Error('Retry attempts exceeded.');
-
-                // retry
+                if(sleepTime === undefined) throw new Error('Retry attempts exceeded.'); // abort retry, retries attempts exceeded
                 await this.sleep(sleepTime); // wait x milliseconds
-                return await this.fetchOrder(orderId, validator, retryPolicy)
+                return await this.fetchOrder(orderId, validator, retryPolicy) // retry
             }
 
             Cart.setOrder(response.data.order);
             return response.data.order;
         } catch (error) {
             const sleepTime = retryPolicy.shift();
-
-            // abort retry, retries attempts exceeded
-            if(sleepTime === undefined) throw error;
-
-            // retry
+            if(sleepTime === undefined) throw error; // abort retry, retries attempts exceeded
             await this.sleep(sleepTime); // wait x milliseconds
-            return await this.fetchOrder(orderId, validator, retryPolicy)
+            return await this.fetchOrder(orderId, validator, retryPolicy) // retry
         }
     }
 
@@ -270,7 +267,8 @@ export class Cart {
         const paymentResults: Array<PaymentResult> = [];
         const canCheckout = new CanCheckout();
         const canPay = new CanPay();
-        const isCheckedOut = new IsCheckedOut();
+        // const isCheckedOut = new IsCheckedOut();
+        const isCheckedOutOrCompleted = new HasStatus([OrderStatus.checkOut, OrderStatus.completed]);
         const orderId = this.getOrderId();
         const order = await this.getOrder(orderId);
 
@@ -280,7 +278,7 @@ export class Cart {
                 aggregateId: orderId,
                 customerEmail: email
             }, this.retryPolicy);
-            await this.fetchOrder(this.getOrderId(), isCheckedOut, this.retryPolicy);
+            await this.fetchOrder(this.getOrderId(), isCheckedOutOrCompleted, this.retryPolicy);
         }
 
         // pay if needed

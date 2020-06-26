@@ -23,6 +23,7 @@ export {
     IsProcessingPayment,
     HasItemsWithStatus,
     HasToken,
+    HasStatus,
     HasCustomer,
     ItemsHaveStatus,
     CanReserve,
