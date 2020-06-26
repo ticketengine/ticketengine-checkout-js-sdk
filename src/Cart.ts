@@ -103,12 +103,32 @@ export class Cart {
 
 
     private async fetchOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = []): Promise<Order> {
-        const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
-        const response = await this.client.sendQuery<GetOrderResponse>(query, []);
 
-        // check if order is in desired state
-        // if not in desired state, retry query
-        if(validator && !validator.validate(response.data.order)) {
+        try {
+
+
+            const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
+            const response = await this.client.sendQuery<GetOrderResponse>(query, []);
+
+            // check if order is in desired state
+            // if not in desired state, retry query
+            if(validator && !validator.validate(response.data.order)) {
+                const sleepTime = retryPolicy.shift();
+
+                // abort retry, retries attempts exceeded
+                if(sleepTime === undefined) throw new Error('Retry attempts exceeded.');
+
+                // retry
+                await this.sleep(sleepTime); // wait x milliseconds
+                return await this.fetchOrder(orderId, validator, retryPolicy)
+            }
+
+            Cart.setOrder(response.data.order);
+            return response.data.order;
+
+
+        } catch (error) {
+
             const sleepTime = retryPolicy.shift();
 
             // abort retry, retries attempts exceeded
@@ -117,10 +137,8 @@ export class Cart {
             // retry
             await this.sleep(sleepTime); // wait x milliseconds
             return await this.fetchOrder(orderId, validator, retryPolicy)
-        }
 
-        Cart.setOrder(response.data.order);
-        return response.data.order;
+        }
     }
 
 
