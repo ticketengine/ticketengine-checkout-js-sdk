@@ -79,7 +79,8 @@ export class Cart {
 
 
     public async getEventPrices(eventId: string): Promise<Array<EventPrice>> {
-        const orderParam = this.hasOrder() ? `, orderId: "${this.getOrderId()}"` : '';
+        const inFinalState = new IsInFinalState();
+        const orderParam = this.hasOrder() && !inFinalState.validate(await this.getOrder(this.getOrderId())) ? `, orderId: "${this.getOrderId()}"` : '';
         const customerParam = this.hasCustomerId() ? `, customerId: "${this.getCustomerId()}"` : '';
         const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currency,limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
         const response = await this.client.sendQuery<GetEventPricesResponse>(query);
