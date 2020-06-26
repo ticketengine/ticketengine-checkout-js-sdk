@@ -126,7 +126,7 @@ export class Cart {
             const sleepTime = retryPolicy.shift();
 
             // abort retry, retries attempts exceeded
-            if(sleepTime === undefined) throw new Error('Retry attempts exceeded.');
+            if(sleepTime === undefined) throw error;
 
             // retry
             await this.sleep(sleepTime); // wait x milliseconds
@@ -157,7 +157,7 @@ export class Cart {
     public async addItems(items: Array<AddItem>): Promise<void> {
         const isInFinalState = new IsInFinalState();
 
-        if(!this.hasOrder() || (this.hasOrder() && isInFinalState.validate(await this.getOrder(this.getOrderId())))) {
+        if(!this.hasOrder() || (this.hasOrder() && isInFinalState.validate(await this.getOrder(this.getOrderId())) )) {
             await this.createOrder();
         }
 
