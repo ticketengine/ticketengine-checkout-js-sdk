@@ -1,4 +1,4 @@
-import {WebClient} from "ticketengine-sdk";
+import {WebClient, CartOperation, CartOperationType} from "ticketengine-sdk";
 import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
 import {Customer, EventPrice, LineItemStatus, Order, OrderStatus} from "./Model";
 import {
@@ -14,7 +14,6 @@ import {
     OrderValidator,
     ValidateItemsStatus
 } from "./OrderValidator";
-import {CartOperation, CartOperationType} from "ticketengine-sdk";
 
 
 export class Cart {
