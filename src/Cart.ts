@@ -7,7 +7,6 @@ import {
     CanReserve,
     HasStatus,
     HasToken,
-    IsCheckedOut,
     IsInFinalState,
     IsPending,
     IsReserved,
@@ -15,7 +14,7 @@ import {
     OrderValidator,
     ValidateItemsStatus
 } from "./OrderValidator";
-import {RemoveItemFromCartResponse} from "ticketengine-sdk/dist/command/order";
+import {CartOperation, CartOperationType, RemoveItemFromCartResponse} from "ticketengine-sdk/dist/command/order";
 
 
 export class Cart {
@@ -159,66 +158,102 @@ export class Cart {
             await this.createOrder();
         }
 
-        const orderLineIds = await Promise.all(items.map(item => {
-            return this.addItem(item);
-        }));
+        // const orderLineIds = await Promise.all(items.map(item => {
+        //     return this.addItem(item);
+        // }));
+        const response = await this.client.order.cartBatchOperation({
+            aggregateId: this.getOrderId(),
+            operations: this.mapToCartOperations(items)
+        }, this.retryPolicy);
 
-        const validator = new ItemsHaveStatus(orderLineIds, LineItemStatus.reserved);
+        const validator = new ItemsHaveStatus(response.data.orderLineItemIds, LineItemStatus.reserved);
         await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
     }
 
 
-    private async addItem(item: AddItem): Promise<string> {
-        let orderLineId = undefined;
-
-        if(Cart.isAccessCartItem(item)) {
-            const response = await this.client.order.addAccessToCart({
-                aggregateId: this.getOrderId(),
-                eventManagerId: item.eventManagerId,
-                eventId: item.eventId,
-                accessDefinitionId: item.accessDefinitionId,
-                // capacityLocationPath: cartItem.capacityLocationPath,
-                requestedConditionPath: item.requestedConditionPath,
-            }, this.retryPolicy);
-            orderLineId = response.data.orderLineItemId;
-        // } else if(Cart.isProductCartItem(item)) {
-        } else {
-            throw new Error('Cannot add item. Unknown item type.');
-        }
-
-        return orderLineId;
-    }
+    // private async addItem(item: AddItem): Promise<string> {
+    //     let orderLineId = undefined;
+    //
+    //     if(Cart.isAccessCartItem(item)) {
+    //         const response = await this.client.order.addAccessToCart({
+    //             aggregateId: this.getOrderId(),
+    //             eventManagerId: item.eventManagerId,
+    //             eventId: item.eventId,
+    //             accessDefinitionId: item.accessDefinitionId,
+    //             // capacityLocationPath: cartItem.capacityLocationPath,
+    //             requestedConditionPath: item.requestedConditionPath,
+    //         }, this.retryPolicy);
+    //         orderLineId = response.data.orderLineItemId;
+    //     // } else if(Cart.isProductCartItem(item)) {
+    //     } else {
+    //         throw new Error('Cannot add item. Unknown item type.');
+    //     }
+    //
+    //     return orderLineId;
+    // }
 
 
     public async removeItems(items: Array<RemoveItem>): Promise<void> {
-        await Promise.all(items.map(item => {
-            return this.removeItem(item);
-        }));
+        // await Promise.all(items.map(item => {
+        //     return this.removeItem(item);
+        // }));
+        await this.client.order.cartBatchOperation({
+            aggregateId: this.getOrderId(),
+            operations: this.mapToCartOperations([], items)
+        }, this.retryPolicy);
 
         const validator = new ItemsHaveStatus(items.map(i => i.orderLineItemId), LineItemStatus.removed);
         await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
     }
 
 
-    private async removeItem(item: RemoveItem): Promise<RemoveItemFromCartResponse> {
-        return this.client.order.removeItemFromCart({
-            aggregateId: this.getOrderId(),
-            orderLineItemId: item.orderLineItemId
-        }, this.retryPolicy);
-    }
+    // private async removeItem(item: RemoveItem): Promise<RemoveItemFromCartResponse> {
+    //     return this.client.order.removeItemFromCart({
+    //         aggregateId: this.getOrderId(),
+    //         orderLineItemId: item.orderLineItemId
+    //     }, this.retryPolicy);
+    // }
 
 
     public async changeItems(addItems: Array<AddItem> = [], removeItems: Array<RemoveItem>): Promise<void> {
-        const addedOrderLineIds = await Promise.all(addItems.map(item => {
-            return this.addItem(item);
-        }));
+        // const addedOrderLineIds = await Promise.all(addItems.map(item => {
+        //     return this.addItem(item);
+        // }));
+        //
+        // await Promise.all(removeItems.map(item => {
+        //     return this.removeItem(item);
+        // }));
+        const response = await this.client.order.cartBatchOperation({
+            aggregateId: this.getOrderId(),
+            operations: this.mapToCartOperations(addItems, removeItems)
+        }, this.retryPolicy);
 
-        await Promise.all(removeItems.map(item => {
-            return this.removeItem(item);
-        }));
-
-        const validator = new ValidateItemsStatus(addedOrderLineIds, removeItems.map(i => i.orderLineItemId));
+        const validator = new ValidateItemsStatus(response.data.orderLineItemIds, removeItems.map(i => i.orderLineItemId));
         await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
+    }
+
+
+    private mapToCartOperations(addItems: Array<AddItem> = [], removeItems: Array<RemoveItem> = []): Array<CartOperation> {
+        const operations: Array<CartOperation> = [];
+        removeItems.forEach((item) => {
+            operations.push({
+                operation: CartOperationType.RemoveItem,
+                data: item
+            })
+        });
+        addItems.forEach((item) => {
+            if(Cart.isAccessCartItem(item)) {
+                operations.push({
+                    operation: CartOperationType.AddAccessItem,
+                    data: item
+                })
+                // } else if(Cart.isProductCartItem(item)) {
+            } else {
+                throw new Error('Cannot add item. Unknown item type.');
+            }
+        });
+
+        return operations;
     }
 
 
