@@ -14,7 +14,7 @@ import {
     OrderValidator,
     ValidateItemsStatus
 } from "./OrderValidator";
-import {CartOperation, CartOperationType, RemoveItemFromCartResponse} from "ticketengine-sdk/dist/command/order";
+import {CartOperation, CartOperationType} from "ticketengine-sdk";
 
 
 export class Cart {
@@ -238,6 +238,7 @@ export class Cart {
         removeItems.forEach((item) => {
             operations.push({
                 operation: CartOperationType.RemoveItem,
+                // operation: 'RemoveItem',
                 data: item
             })
         });
