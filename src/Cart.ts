@@ -54,6 +54,11 @@ export class Cart {
     }
 
 
+    public getClient(): WebClient {
+        return this.client;
+    }
+
+
     public async login(username: string, password: string): Promise<void> {
         await this.client.user.getAuthToken({
             grantType: 'password',
