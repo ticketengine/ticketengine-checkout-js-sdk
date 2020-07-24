@@ -30,7 +30,7 @@ export class Cart {
     // constructor(salesChannelId: string, registerId: string, customerId?: string, clientId?: string, clientSecret?: string, scope?: string, authApiUrl?: string, adminApiUrl?: string, graphApiUrl?: string) {
     constructor(options: CartOptions) {
         this.client = new WebClient({
-            authUrl: options.authApiUrl || 'https://auth.ticketengine.io',
+            authUrl: options.authUrl || 'https://auth.ticketengine.io',
             adminApiUrl: options.adminApiUrl || 'https://admin-api.ticketengine.io',
             graphApiUrl: options.graphApiUrl || 'https://graph-api.ticketengine.io',
             oauthClientId: options.clientId || 'shopping_cart',
@@ -552,7 +552,7 @@ export interface CartOptions {
     clientId?: string,
     clientSecret?: string,
     scope?: string,
-    authApiUrl?: string,
+    authUrl?: string,
     adminApiUrl?: string,
     graphApiUrl?: string
 }
