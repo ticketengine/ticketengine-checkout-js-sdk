@@ -22,9 +22,9 @@ export class Cart {
     // salesChannelId: string;
     // registerId: string;
     // customerId?: string;
-    oauthClientId: string;
-    oauthClientSecret: string;
-    oauthScope: string;
+    // oauthClientId: string;
+    // oauthClientSecret: string;
+    // oauthScope: string;
     retryPolicy: number[] = [0, 500, 1000, 1000, 1000, 1000, 1000, 3000, 3000, 3000, 5000, 5000];
 
     // constructor(salesChannelId: string, registerId: string, customerId?: string, clientId?: string, clientSecret?: string, scope?: string, authApiUrl?: string, adminApiUrl?: string, graphApiUrl?: string) {
@@ -32,14 +32,22 @@ export class Cart {
         this.client = new WebClient({
             authUrl: options.authApiUrl || 'https://auth.ticketengine.io',
             adminApiUrl: options.adminApiUrl || 'https://admin-api.ticketengine.io',
-            graphApiUrl: options.graphApiUrl || 'https://graph-api.ticketengine.io'
+            graphApiUrl: options.graphApiUrl || 'https://graph-api.ticketengine.io',
+            oauthClientId: options.clientId || 'shopping_cart',
+            oauthClientSecret: options.clientSecret || '',
+            oauthScope: options.scope || 'order:write payment:write event:read order:read order:reserve',
         });
         // this.salesChannelId = options.salesChannelId;
         // this.registerId = options.registerId;
         // this.customerId = options.customerId;
-        this.oauthClientId = options.clientId || 'shopping_cart';
-        this.oauthClientSecret = options.clientSecret || '';
-        this.oauthScope = options.scope || 'order:write payment:write event:read order:read order:reserve';
+        // this.oauthClientId = options.clientId || 'shopping_cart';
+        // this.oauthClientSecret = options.clientSecret || '';
+        // this.oauthScope = options.scope || 'order:write payment:write event:read order:read order:reserve';
+        // const clientId =  options.clientId || 'shopping_cart';
+        // const clientSecret = options.clientSecret || '';
+        // const scope = options.scope || 'order:write payment:write event:read order:read order:reserve';
+        // this.client.setClient(clientId, clientSecret);
+        // this.client.setScope(scope);
         if(options.salesChannelId) this.setSalesChannelId(options.salesChannelId);
         if(options.registerId) this.setRegisterId(options.registerId);
         if(options.customerId) Cart.setCustomerId(options.customerId);
@@ -49,9 +57,12 @@ export class Cart {
     public async login(username: string, password: string): Promise<void> {
         await this.client.user.getAuthToken({
             grantType: 'password',
-            clientId: this.oauthClientId,
-            clientSecret: this.oauthClientSecret,
-            scope: this.oauthScope,
+            // clientId: this.oauthClientId,
+            // clientSecret: this.oauthClientSecret,
+            // scope: this.oauthScope,
+            clientId: this.client.getClientId(),
+            clientSecret: this.client.getClientSecret(),
+            scope: this.client.getScope(),
             username: username,
             password: password
         });
@@ -110,6 +121,7 @@ export class Cart {
         try {
             const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
             const response = await this.client.sendQuery<GetOrderResponse>(query, []);
+            Cart.setOrder(response.data.order);
 
             // check if order is in desired state
             // if not in desired state, retry query
@@ -120,7 +132,6 @@ export class Cart {
                 return await this.fetchOrder(orderId, validator, retryPolicy) // retry
             }
 
-            Cart.setOrder(response.data.order);
             return response.data.order;
         } catch (error) {
             const sleepTime = retryPolicy.shift();
@@ -134,6 +145,7 @@ export class Cart {
     public async createOrder(): Promise<void> {
         const isPending = new IsPending();
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
+        localStorage.removeItem("te-order");
         const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
         await this.fetchOrder(response.data.orderId, isPending, this.retryPolicy)
     }
