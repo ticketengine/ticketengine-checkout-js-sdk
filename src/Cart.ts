@@ -25,7 +25,7 @@ export class Cart {
     // oauthClientId: string;
     // oauthClientSecret: string;
     // oauthScope: string;
-    retryPolicy: number[] = [0, 500, 1000, 1000, 1000, 1000, 1000, 3000, 3000, 3000, 5000, 5000];
+    retryPolicy: number[] = [0, 500, 500, 500, 500, 500, 1000, 1000, 1000, 1000, 1000, 3000, 3000, 3000, 5000, 5000];
 
     // constructor(salesChannelId: string, registerId: string, customerId?: string, clientId?: string, clientSecret?: string, scope?: string, authApiUrl?: string, adminApiUrl?: string, graphApiUrl?: string) {
     constructor(options: CartOptions) {
