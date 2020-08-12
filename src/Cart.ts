@@ -1,5 +1,11 @@
 import {WebClient, CartOperation, CartOperationType} from "ticketengine-sdk";
-import {GetCustomerResponse, GetEventPricesResponse, GetEventResponse, GetOrderResponse} from "./QueryResponse";
+import {
+    GetCustomerResponse,
+    GetEventPricesResponse,
+    GetEventResponse,
+    GetMeResponse,
+    GetOrderResponse
+} from "./QueryResponse";
 import {Customer, EventPrice, LineItemStatus, Order, OrderStatus} from "./Model";
 import {
     CanCheckout,
@@ -35,7 +41,8 @@ export class Cart {
             graphApiUrl: options.graphApiUrl || 'https://graph-api.ticketengine.io',
             oauthClientId: options.clientId || 'shopping_cart',
             oauthClientSecret: options.clientSecret || '',
-            oauthScope: options.scope || 'order:write payment:write event:read order:read order:reserve',
+            // oauthScope: options.scope || 'order:write payment:write event:read order:read order:reserve',
+            oauthScope: options.scope || 'order:write payment:write event:read order:reserve',
         });
         // this.salesChannelId = options.salesChannelId;
         // this.registerId = options.registerId;
@@ -124,20 +131,24 @@ export class Cart {
 
     private async fetchOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = []): Promise<Order> {
         try {
-            const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
-            const response = await this.client.sendQuery<GetOrderResponse>(query, []);
-            Cart.setOrder(response.data.order);
+            // const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
+            // const response = await this.client.sendQuery<GetOrderResponse>(query, []);
+            // const order = response.data.order;
+            const query = `query { me{order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}}}}} }`;
+            const response = await this.client.sendQuery<GetMeResponse>(query, []);
+            const order = response.data.me.order;
+            Cart.setOrder(order);
 
             // check if order is in desired state
             // if not in desired state, retry query
-            if(validator && !validator.validate(response.data.order)) {
+            if(validator && !validator.validate(order)) {
                 const sleepTime = retryPolicy.shift();
                 if(sleepTime === undefined) throw new Error('Retry attempts exceeded.'); // abort retry, retries attempts exceeded
                 await this.sleep(sleepTime); // wait x milliseconds
                 return await this.fetchOrder(orderId, validator, retryPolicy) // retry
             }
 
-            return response.data.order;
+            return order;
         } catch (error) {
             const sleepTime = retryPolicy.shift();
             if(sleepTime === undefined) throw error; // abort retry, retries attempts exceeded

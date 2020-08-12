@@ -10,6 +10,14 @@ export interface GetOrderResponse extends QueryResponse {
     };
 }
 
+export interface GetMeResponse extends QueryResponse {
+    data: {
+        me: {
+            order: Order
+        }
+    };
+}
+
 export interface GetEventResponse extends QueryResponse {
     data: {
         event: Event
