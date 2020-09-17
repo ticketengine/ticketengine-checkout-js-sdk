@@ -32,13 +32,13 @@ export enum LineItemType {
 }
 
 export interface RequiredPayment {
-    currency: string;
+    currency: Currency;
     amount: number;
 }
 
 export interface Payment {
     id: string;
-    currency: string;
+    currency: Currency;
     amount: number;
     status: string;
 }
@@ -62,10 +62,17 @@ export interface Event {
     availableCapacity?: number;
 }
 
+export interface ProductDefinition {
+    id: string;
+    name: string;
+    description?: string;
+    apiConfig: any;
+}
+
 export interface EventPrice {
     conditionId: string;
     price: number;
-    currency: string;
+    currency: Currency;
     tax: number;
     description: string;
     conditionPath: string[];
@@ -89,6 +96,14 @@ export interface AccessLineItem extends LineItem {
     requestedConditionPath: string[];
     accessDefinition: AccessDefinition;
     event: Event;
+}
+
+export interface ProductLineItem extends LineItem {
+    productId: string;
+    productDefinitionId: string;
+    productVariantId: string;
+    requestedConditionPath: string[];
+    productDefinition: ProductDefinition;
 }
 
 export interface SalesChannel {
@@ -126,5 +141,12 @@ export interface Customer {
     birthDate?: string;
     gender?: string;
     tags?: string;
+}
+
+export interface Currency {
+    name: string;
+    code: string;
+    exponent: number;
+    symbol: string;
 }
 

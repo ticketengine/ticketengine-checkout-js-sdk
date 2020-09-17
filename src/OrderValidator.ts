@@ -164,7 +164,7 @@ export class NeedsPaymentWithCurrency implements OrderValidator {
     }
 
     validate(order: Order): Boolean {
-        return order && order.requiredPayments ? order.requiredPayments.map((p) => p.currency).includes(this.currencyCode) : false;
+        return order && order.requiredPayments ? order.requiredPayments.map((p) => p.currency.code).includes(this.currencyCode) : false;
     }
 }
 
@@ -230,7 +230,7 @@ export class CanPay implements OrderValidator {
 export class CanPayOnline implements OrderValidator {
     validate(order: Order): Boolean {
         // const canPay: CanPay = new CanPay();
-        const paymentCurrencies = order && order.requiredPayments ? order.requiredPayments.map((rp) => rp.currency) : [];
+        const paymentCurrencies = order && order.requiredPayments ? order.requiredPayments.map((rp) => rp.currency.code) : [];
         // return canPay.validate(order) && !paymentCurrencies.includes('CINEVILLE');
         return !paymentCurrencies.includes('CINEVILLE');
     }

@@ -103,7 +103,8 @@ export class Cart {
         const inFinalState = new IsInFinalState();
         const orderParam = this.hasOrder() && !inFinalState.validate(await this.getOrder(this.getOrderId())) ? `, orderId: "${this.getOrderId()}"` : '';
         const customerParam = this.hasCustomerId() ? `, customerId: "${this.getCustomerId()}"` : '';
-        const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currency,limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
+        // const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currencyCode,limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
+        const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
         const response = await this.client.sendQuery<GetEventPricesResponse>(query);
         return response.data.eventPrices;
     }
@@ -131,10 +132,8 @@ export class Cart {
 
     private async fetchOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = []): Promise<Order> {
         try {
-            // const query = `query { order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} }} }`;
-            // const response = await this.client.sendQuery<GetOrderResponse>(query, []);
-            // const order = response.data.order;
-            const query = `query { me{order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}}}}} }`;
+            // const query = `query { me{order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currencyCode,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currencyCode,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currencyCode,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}}}}} }`;
+            const query = `query { me{order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currency{code,name,exponent,symbol},amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency{code,name,exponent,symbol},amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency{code,name,exponent,symbol},limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} ... on ProductLineItem {id,type,status,price,tax,currency{name,code,exponent,symbol},requestedConditionPath,productId,productDefinition{id,name},product{id,status}} }}} }`;
             const response = await this.client.sendQuery<GetMeResponse>(query, []);
             const order = response.data.me.order;
             Cart.setOrder(order);
@@ -275,7 +274,11 @@ export class Cart {
                     operation: CartOperationType.AddAccessItem,
                     data: item
                 })
-                // } else if(Cart.isProductCartItem(item)) {
+            } else if(Cart.isProductCartItem(item)) {
+                operations.push({
+                    operation: CartOperationType.AddProductItem,
+                    data: item
+                })
             } else {
                 throw new Error('Cannot add item. Unknown item type.');
             }
@@ -349,14 +352,14 @@ export class Cart {
         // if(canPay.validate(order) && order.requiredPayments) {
             // for (let index = 0; index < order.requiredPayments.length; index++) {
             //     const requiredPayment = order.requiredPayments[index];
-            //     const paymentResult = await this.createPayment(requiredPayment.currency, requiredPayment.amount, paymentMethod);
+            //     const paymentResult = await this.createPayment(requiredPayment.currencyCode, requiredPayment.amount, paymentMethod);
             //     paymentResults.push(paymentResult);
             // }
         // }
         if(canPay.validate(order) && payments) {
             for (let index = 0; index < payments.length; index++) {
                 const payment = payments[index];
-                const paymentResult = await this.createPayment(payment.currency, payment.amount, payment.method);
+                const paymentResult = await this.createPayment(payment.currencyCode, payment.amount, payment.method, payment.token);
                 paymentResults.push(paymentResult);
             }
         }
@@ -375,7 +378,7 @@ export class Cart {
     // }
 
 
-    private async createPayment(currency: string, amount: number, method?: string): Promise<PaymentResult> {
+    private async createPayment(currencyCode: string, amount: number, method?: string, token?: string): Promise<PaymentResult> {
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         let paymentId = undefined;
         let action = undefined;
@@ -383,7 +386,7 @@ export class Cart {
         if(method === 'cash') {
             const response = await this.client.payment.createCashPayment({
                 orderId: this.getOrderId(),
-                currency,
+                currency: currencyCode,
                 amount,
                 customerId
             }, this.retryPolicy);
@@ -392,18 +395,26 @@ export class Cart {
         if(method === 'pin') {
             const response = await this.client.payment.createPinPayment({
                 orderId: this.getOrderId(),
-                currency,
+                currency: currencyCode,
                 amount,
                 customerId
             }, this.retryPolicy);
             paymentId = response.data.paymentId;
         }
         if(method !== 'cash' && method !== 'pin') {
-            const response = await this.client.payment.createMolliePayment({
+            // const response = await this.client.payment.createMolliePayment({
+            //     orderId: this.getOrderId(),
+            //     currency: currencyCode,
+            //     amount,
+            //     customerId,
+            //     paymentMethod: method
+            // }, this.retryPolicy);
+            const response = await this.client.payment.createPayment({
                 orderId: this.getOrderId(),
-                currency,
+                currency: currencyCode,
                 amount,
                 customerId,
+                token,
                 paymentMethod: method
             }, this.retryPolicy);
             paymentId = response.data.paymentId;
@@ -550,7 +561,7 @@ export class Cart {
     }
 
     private static isProductCartItem(item: AddItem): item is AddProductItem {
-        return (item as AddProductItem).productId !== undefined;
+        return (item as AddProductItem).productDefinitionId !== undefined;
     }
 
     private async sleep(ms: number): Promise<any> {
@@ -589,7 +600,8 @@ export interface AddAccessItem extends AddItem {
 }
 
 export interface AddProductItem extends AddItem {
-    productId: string;
+    productDefinitionId: string;
+    requestedConditionPath: Array<string>;
 }
 
 export interface RemoveItem {
@@ -601,9 +613,10 @@ export interface CheckoutResult {
 }
 
 export interface Payment {
-    currency: string;
+    currencyCode: string;
     amount: number;
-    method: string;
+    method?: string;
+    token?: string;
 }
 
 export interface PaymentResult {
