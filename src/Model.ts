@@ -80,6 +80,17 @@ export interface EventPrice {
     accessDefinition: AccessDefinition;
 }
 
+export interface ProductPrice {
+    conditionId: string;
+    price: number;
+    currency: Currency;
+    tax: number;
+    description: string;
+    conditionPath: string[];
+    limit?: any;
+    productDefinition: ProductDefinition;
+}
+
 export interface LineItem {
     id: string;
     type: LineItemType;

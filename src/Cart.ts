@@ -4,9 +4,9 @@ import {
     GetEventPricesResponse,
     GetEventResponse,
     GetMeResponse,
-    GetOrderResponse
+    GetOrderResponse, GetProductPricesResponse
 } from "./QueryResponse";
-import {Customer, EventPrice, LineItemStatus, Order, OrderStatus} from "./Model";
+import {Customer, EventPrice, LineItemStatus, Order, OrderStatus, ProductPrice} from "./Model";
 import {
     CanCheckout,
     CanPay,
@@ -107,6 +107,16 @@ export class Cart {
         const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
         const response = await this.client.sendQuery<GetEventPricesResponse>(query);
         return response.data.eventPrices;
+    }
+
+
+    public async getProductPrices(productDefinitionId: string): Promise<Array<ProductPrice>> {
+        const inFinalState = new IsInFinalState();
+        const orderParam = this.hasOrder() && !inFinalState.validate(await this.getOrder(this.getOrderId())) ? `, orderId: "${this.getOrderId()}"` : '';
+        const customerParam = this.hasCustomerId() ? `, customerId: "${this.getCustomerId()}"` : '';
+        const query = `query { productPrices(productDefinitionId: "${productDefinitionId}"${orderParam}${customerParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,productDefinition{id,name,description}} }`;
+        const response = await this.client.sendQuery<GetProductPricesResponse>(query);
+        return response.data.productPrices;
     }
 
 
