@@ -31,6 +31,7 @@ export {
     CanPay,
     CanPayOnline,
     NeedsPaymentWithCurrency,
+    NeedsPaymentWithIsoCurrency,
     NeedsPaymentWithCustomCurrency,
     ValidateItemsStatus,
 } from './OrderValidator';

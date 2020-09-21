@@ -168,6 +168,19 @@ export class NeedsPaymentWithCurrency implements OrderValidator {
     }
 }
 
+export class NeedsPaymentWithIsoCurrency implements OrderValidator {
+    validate(order: Order): Boolean {
+        if(order && order.requiredPayments) {
+            for (let i = 0; i < order.requiredPayments.length; i++) {
+                const currencyCode = order.requiredPayments[i].currency.code;
+                if(currencyCode.length === 3) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
 
 export class NeedsPaymentWithCustomCurrency implements OrderValidator {
     validate(order: Order): Boolean {
