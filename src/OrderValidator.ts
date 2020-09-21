@@ -110,6 +110,24 @@ export class HasStatus implements OrderValidator {
     }
 }
 
+export class HasPaymentWithCurrencyCode implements OrderValidator {
+    private readonly currencyCodes: string[];
+
+    constructor(currencyCodes: string[]) {
+        this.currencyCodes = currencyCodes;
+    }
+
+    validate(order: Order): Boolean {
+        // returns true when array contains all values that are in target array
+        let includesAll = (arr: string[], target: string[]) => target.every(v => arr.includes(v));
+
+        if(!order || !order.payments) {
+            return false;
+        }
+        return includesAll(order.payments.map(p => p.currency.code), this.currencyCodes);
+    }
+}
+
 export class HasItemsWithStatus implements OrderValidator {
     private readonly status: LineItemStatus[];
 

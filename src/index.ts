@@ -26,6 +26,7 @@ export {
     HasToken,
     HasStatus,
     HasCustomer,
+    HasPaymentWithCurrencyCode,
     ItemsHaveStatus,
     CanReserve,
     CanCheckout,
