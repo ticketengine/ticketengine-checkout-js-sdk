@@ -182,7 +182,7 @@ export class NeedsPaymentWithIsoCurrency implements OrderValidator {
                 const currencyCode = order.requiredPayments[i].currency.code;
                 const requiredAmount = order.requiredPayments[i].amount;
                 const paidAmount = payments.filter(p => p.currency.code === currencyCode).reduce((total, p) => { return total + p.amount }, 0);
-                if(currencyCode.length === 3 && paidAmount >= requiredAmount) {
+                if(currencyCode.length === 3 && paidAmount < requiredAmount) {
                     return true;
                 }
             }
@@ -199,7 +199,7 @@ export class NeedsPaymentWithCustomCurrency implements OrderValidator {
                 const currencyCode = order.requiredPayments[i].currency.code;
                 const requiredAmount = order.requiredPayments[i].amount;
                 const paidAmount = payments.filter(p => p.currency.code === currencyCode).reduce((total, p) => { return total + p.amount }, 0);
-                if(currencyCode.length > 3 && paidAmount >= requiredAmount) {
+                if(currencyCode.length > 3 && paidAmount < requiredAmount) {
                     return true;
                 }
             }
