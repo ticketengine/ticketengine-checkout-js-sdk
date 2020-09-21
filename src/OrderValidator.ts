@@ -42,6 +42,12 @@ export class IsReserved implements OrderValidator {
     }
 }
 
+export class IsPaid implements OrderValidator {
+    validate(order: Order): Boolean {
+        return order && order.paymentStatus === PaymentStatus.paid;
+    }
+}
+
 export class IsEmpty implements OrderValidator {
     validate(order: Order): Boolean {
         if(!order || !order.lineItems) {
@@ -170,10 +176,13 @@ export class NeedsPaymentWithCurrency implements OrderValidator {
 
 export class NeedsPaymentWithIsoCurrency implements OrderValidator {
     validate(order: Order): Boolean {
+        const payments = order && order.payments ? order.payments : [];
         if(order && order.requiredPayments) {
             for (let i = 0; i < order.requiredPayments.length; i++) {
                 const currencyCode = order.requiredPayments[i].currency.code;
-                if(currencyCode.length === 3) {
+                const requiredAmount = order.requiredPayments[i].amount;
+                const paidAmount = payments.filter(p => p.currency.code === currencyCode).reduce((total, p) => { return total + p.amount }, 0);
+                if(currencyCode.length === 3 && paidAmount >= requiredAmount) {
                     return true;
                 }
             }
@@ -184,10 +193,13 @@ export class NeedsPaymentWithIsoCurrency implements OrderValidator {
 
 export class NeedsPaymentWithCustomCurrency implements OrderValidator {
     validate(order: Order): Boolean {
+        const payments = order && order.payments ? order.payments : [];
         if(order && order.requiredPayments) {
             for (let i = 0; i < order.requiredPayments.length; i++) {
                 const currencyCode = order.requiredPayments[i].currency.code;
-                if(currencyCode.length > 3) {
+                const requiredAmount = order.requiredPayments[i].amount;
+                const paidAmount = payments.filter(p => p.currency.code === currencyCode).reduce((total, p) => { return total + p.amount }, 0);
+                if(currencyCode.length > 3 && paidAmount >= requiredAmount) {
                     return true;
                 }
             }

@@ -19,6 +19,7 @@ export {
     IsPending,
     IsEmpty,
     IsReserved,
+    IsPaid,
     IsInFinalState,
     IsProcessingPayment,
     HasItemsWithStatus,
