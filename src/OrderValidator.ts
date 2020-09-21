@@ -75,8 +75,8 @@ export class IsInFinalState implements OrderValidator {
 
 export class IsProcessingPayment implements OrderValidator {
     validate(order: Order): Boolean {
-        // const hasPayments = order.payments ? order.payments.length > 0 : false;
-        return order && order.status === OrderStatus.checkOut && order.paymentStatus !== PaymentStatus.paid;
+        const hasPayments = order && order.payments ? order.payments.length > 0 : false;
+        return order && order.status === OrderStatus.checkOut && order.paymentStatus !== PaymentStatus.paid && hasPayments;
     }
 }
 
