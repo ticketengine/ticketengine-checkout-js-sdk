@@ -406,7 +406,7 @@ export class Cart {
                 currency: currencyCode,
                 amount,
                 customerId
-            }, this.retryPolicy);
+            }, [0, 500, 1000]);
             paymentId = response.data.paymentId;
         }
         if(method === 'pin') {
@@ -415,7 +415,7 @@ export class Cart {
                 currency: currencyCode,
                 amount,
                 customerId
-            }, this.retryPolicy);
+            }, [0, 500, 1000]);
             paymentId = response.data.paymentId;
         }
         if(method !== 'cash' && method !== 'pin') {
@@ -433,7 +433,7 @@ export class Cart {
                 customerId,
                 token,
                 paymentMethod: method
-            }, this.retryPolicy);
+            }, [0, 500, 1000]);
             paymentId = response.data.paymentId;
             action = {paymentUrl: response.data.paymentUrl};
         }
