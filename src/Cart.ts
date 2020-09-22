@@ -374,7 +374,7 @@ export class Cart {
             // }
         // }
         if(canPay.validate(order) && payments) {
-            payments.sort((a,b) => (a.currencyCode.length > b.currencyCode.length) ? 1 : ((b.currencyCode.length > a.currencyCode.length) ? -1 : 0)); // sort payments so custom currency payments are create first.
+            payments.sort((a,b) => (a.currencyCode.length < b.currencyCode.length) ? 1 : ((b.currencyCode.length < a.currencyCode.length) ? -1 : 0)); // sort payments so custom currency payments are create first.
             for (let index = 0; index < payments.length; index++) {
                 const payment = payments[index];
                 const paymentResult = await this.createPayment(payment.currencyCode, payment.amount, payment.method, payment.token);
