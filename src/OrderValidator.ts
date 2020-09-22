@@ -194,7 +194,7 @@ export class NeedsPaymentWithCurrency implements OrderValidator {
 
 export class NeedsPaymentWithIsoCurrency implements OrderValidator {
     validate(order: Order): Boolean {
-        const payments = order && order.payments ? order.payments : [];
+        const payments = order && order.payments ? order.payments.filter(p => !['refused', 'cancelled'].includes(p.status) ) : [];
         if(order && order.requiredPayments) {
             for (let i = 0; i < order.requiredPayments.length; i++) {
                 const currencyCode = order.requiredPayments[i].currency.code;
@@ -211,7 +211,7 @@ export class NeedsPaymentWithIsoCurrency implements OrderValidator {
 
 export class NeedsPaymentWithCustomCurrency implements OrderValidator {
     validate(order: Order): Boolean {
-        const payments = order && order.payments ? order.payments : [];
+        const payments = order && order.payments ? order.payments.filter(p => !['refused', 'cancelled'].includes(p.status) ) : [];
         if(order && order.requiredPayments) {
             for (let i = 0; i < order.requiredPayments.length; i++) {
                 const currencyCode = order.requiredPayments[i].currency.code;
