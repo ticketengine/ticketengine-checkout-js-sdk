@@ -370,14 +370,8 @@ export class Cart {
         }
 
         // pay if needed
-        // if(canPay.validate(order) && order.requiredPayments) {
-            // for (let index = 0; index < order.requiredPayments.length; index++) {
-            //     const requiredPayment = order.requiredPayments[index];
-            //     const paymentResult = await this.createPayment(requiredPayment.currencyCode, requiredPayment.amount, paymentMethod);
-            //     paymentResults.push(paymentResult);
-            // }
-        // }
-        if(canPay.validate(order) && payments) {
+        // if(canPay.validate(order) && payments) {
+        if(payments && payments.length > 0) {
             payments.sort((a,b) => (a.currencyCode.length < b.currencyCode.length) ? 1 : ((b.currencyCode.length < a.currencyCode.length) ? -1 : 0)); // sort payments so custom currency payments are create first.
             for (let index = 0; index < payments.length; index++) {
                 const payment = payments[index];
