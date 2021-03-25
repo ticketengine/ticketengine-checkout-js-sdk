@@ -381,7 +381,7 @@ export class Cart {
             payments.sort((a,b) => (a.currencyCode.length < b.currencyCode.length) ? 1 : ((b.currencyCode.length < a.currencyCode.length) ? -1 : 0)); // sort payments so custom currency payments are create first.
             for (let index = 0; index < payments.length; index++) {
                 const payment = payments[index];
-                const paymentResult = await this.createPayment(payment.currencyCode, payment.amount, payment.method, payment.token);
+                const paymentResult = await this.createPayment(payment.currencyCode, payment.amount, payment.method, payment.token, payment.loyaltyCardType, payment.loyaltyCardId, payment.loyaltyCardPin);
                 paymentResults.push(paymentResult);
             }
         }
@@ -400,7 +400,7 @@ export class Cart {
     // }
 
 
-    private async createPayment(currencyCode: string, amount: number, method?: string, token?: string): Promise<PaymentResult> {
+    private async createPayment(currencyCode: string, amount: number, method?: string|null, token?: string|null, loyaltyCardType?: string|null, loyaltyCardId?: string|null, loyaltyCardPin?: string|null): Promise<PaymentResult> {
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
         let paymentId = undefined;
         let action = undefined;
@@ -437,7 +437,10 @@ export class Cart {
                 amount,
                 customerId,
                 token,
-                paymentMethod: method
+                paymentMethod: method,
+                loyaltyCardType,
+                loyaltyCardId,
+                loyaltyCardPin,
             }, [0, 500, 1000]);
             paymentId = response.data.paymentId;
             action = {paymentUrl: response.data.paymentUrl};
@@ -637,8 +640,11 @@ export interface CheckoutResult {
 export interface Payment {
     currencyCode: string;
     amount: number;
-    method?: string;
-    token?: string;
+    method?: string|null;
+    token?: string|null;
+    loyaltyCardType?: string|null;
+    loyaltyCardId?: string|null;
+    loyaltyCardPin?: string|null;
 }
 
 export interface PaymentResult {
