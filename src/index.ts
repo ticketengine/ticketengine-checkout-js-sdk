@@ -35,5 +35,6 @@ export {
     NeedsPaymentWithCurrency,
     NeedsPaymentWithIsoCurrency,
     NeedsPaymentWithCustomCurrency,
+    NeedsLoyaltyCardPayment,
     ValidateItemsStatus,
 } from './OrderValidator';

@@ -36,11 +36,19 @@ export interface RequiredPayment {
     amount: number;
 }
 
+export interface RequiredLoyaltyCardPayment {
+    currency: Currency;
+    cardType: string;
+    amount: number;
+}
+
 export interface Payment {
     id: string;
     currency: Currency;
     amount: number;
     status: string;
+    method?: string;
+    psp?: string;
 }
 
 export interface AccessDefinition {
@@ -140,6 +148,7 @@ export interface Order {
     paymentUrl?: string;
     payments?: Payment[];
     requiredPayments?: RequiredPayment[];
+    requiredLoyaltyCardPayments?: RequiredLoyaltyCardPayment[];
     lineItems: LineItem[];
 }
 

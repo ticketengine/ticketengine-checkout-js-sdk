@@ -226,6 +226,25 @@ export class NeedsPaymentWithCustomCurrency implements OrderValidator {
     }
 }
 
+export class NeedsLoyaltyCardPayment implements OrderValidator {
+    validate(order: Order): Boolean {
+        const payments = order && order.payments ? order.payments.filter(p => !['refused', 'cancelled'].includes(p.status) ) : [];
+        if(order && order.requiredLoyaltyCardPayments) {
+            for (let i = 0; i < order.requiredLoyaltyCardPayments.length; i++) {
+                const currencyCode = order.requiredLoyaltyCardPayments[i].currency.code;
+                const requiredAmount = order.requiredLoyaltyCardPayments[i].amount;
+                const cardType = order.requiredLoyaltyCardPayments[i].cardType;
+                const loyaltyCardPayments = payments.filter(p => p.currency.code === currencyCode && p.psp === 'loyalty' && p.method === cardType);
+                const paidAmount = loyaltyCardPayments.reduce((total, p) => { return total + p.amount }, 0);
+                if(loyaltyCardPayments.length === 0 || paidAmount < requiredAmount) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
 
 export class ValidateItemsStatus implements OrderValidator {
     private readonly reservedOrderLineIds: string[];
