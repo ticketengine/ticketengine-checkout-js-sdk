@@ -188,11 +188,11 @@ export class Cart {
     }
 
 
-    public async cancelOrder(orderId?: string): Promise<void> {
+    public async cancelOrder(orderId?: string, reason?: string): Promise<void> {
         if(!orderId) {
             orderId = this.getOrderId()
         }
-        await this.client.order.cancelOrder({aggregateId: orderId}, this.retryPolicy);
+        await this.client.order.cancelOrder({aggregateId: orderId, reason: reason}, this.retryPolicy);
         if(this.hasOrder() && this.getOrderId() === orderId) {
             localStorage.removeItem("te-order");
         }
