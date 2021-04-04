@@ -199,6 +199,17 @@ export class Cart {
     }
 
 
+    public async cancelOrderReservation(orderId?: string, reason?: string): Promise<void> {
+        if(!orderId) {
+            orderId = this.getOrderId()
+        }
+        await this.client.order.cancelOrderReservation({aggregateId: orderId, reason: reason}, this.retryPolicy);
+        if(this.hasOrder() && this.getOrderId() === orderId) {
+            localStorage.removeItem("te-order");
+        }
+    }
+
+
     public async addItems(items: Array<AddItem>): Promise<void> {
         const isInFinalState = new IsInFinalState();
 
