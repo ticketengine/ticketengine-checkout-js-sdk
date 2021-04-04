@@ -199,7 +199,7 @@ export class Cart {
     }
 
 
-    public async cancelOrderReservation(orderId?: string, reason?: string): Promise<void> {
+    public async cancelReservation(orderId?: string, reason?: string): Promise<void> {
         if(!orderId) {
             orderId = this.getOrderId()
         }
