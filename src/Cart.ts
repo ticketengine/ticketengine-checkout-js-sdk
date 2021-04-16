@@ -43,6 +43,7 @@ export class Cart {
             oauthClientSecret: options.clientSecret || '',
             // oauthScope: options.scope || 'order:write payment:write event:read order:read order:reserve',
             oauthScope: options.scope || 'order:write payment:write event:read order:reserve',
+            clearTokenOnSetAuthUrl: options.clearTokenOnSetAuthUrl || true,
         });
         // this.salesChannelId = options.salesChannelId;
         // this.registerId = options.registerId;
@@ -614,6 +615,7 @@ export interface CartOptions {
     authUrl?: string,
     adminApiUrl?: string,
     graphApiUrl?: string
+    clearTokenOnSetAuthUrl?: boolean
 }
 
 
