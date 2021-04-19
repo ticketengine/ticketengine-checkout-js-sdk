@@ -449,7 +449,8 @@ export class Cart {
                 loyaltyCardType,
                 loyaltyCardId,
                 loyaltyCardPin,
-            }, [0, 500, 1000]);
+            // }, [0, 500, 1000]);
+            }, []);
             paymentId = response.data.paymentId;
             action = {paymentUrl: response.data.paymentUrl};
         }
