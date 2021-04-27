@@ -100,14 +100,15 @@ export class Cart {
     }
 
 
-    public async getEventPrices(eventId: string, customerId: string|null = null, salesChannelId: string|null = null): Promise<Array<EventPrice>> {
+    public async getEventPrices(eventId: string, customerId: string|null = null, salesChannelId: string|null = null, preferredLanguageCode: string|null = null): Promise<Array<EventPrice>> {
         const inFinalState = new IsInFinalState();
         const orderParam = this.hasOrder() && !inFinalState.validate(await this.getOrder(this.getOrderId())) ? `, orderId: "${this.getOrderId()}"` : '';
         let customerParam = this.hasCustomerId() ? `, customerId: "${this.getCustomerId()}"` : '';
         customerParam = customerParam !== '' && customerId !== null ? `, customerId: "${customerId}"` : '';
         const salesChannelParam = salesChannelId !== null ? `, salesChannelId: "${salesChannelId}"` : '';
+        const preferredLanguageParam = preferredLanguageCode !== null ? `, preferredLanguage: "${preferredLanguageCode}"` : '';
         // const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currencyCode,limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
-        const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}${salesChannelParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
+        const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}${salesChannelParam}${preferredLanguageParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
         const response = await this.client.sendQuery<GetEventPricesResponse>(query);
         return response.data.eventPrices;
     }
@@ -120,13 +121,14 @@ export class Cart {
     }
 
 
-    public async getProductPrices(productDefinitionId: string, customerId: string|null = null, salesChannelId: string|null = null): Promise<Array<ProductPrice>> {
+    public async getProductPrices(productDefinitionId: string, customerId: string|null = null, salesChannelId: string|null = null, preferredLanguageCode: string|null = null): Promise<Array<ProductPrice>> {
         const inFinalState = new IsInFinalState();
         const orderParam = this.hasOrder() && !inFinalState.validate(await this.getOrder(this.getOrderId())) ? `, orderId: "${this.getOrderId()}"` : '';
         let customerParam = this.hasCustomerId() ? `, customerId: "${this.getCustomerId()}"` : '';
         customerParam = customerParam !== '' && customerId !== null ? `, customerId: "${customerId}"` : '';
         const salesChannelParam = salesChannelId !== null ? `, salesChannelId: "${salesChannelId}"` : '';
-        const query = `query { productPrices(productDefinitionId: "${productDefinitionId}"${orderParam}${customerParam}${salesChannelParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,productDefinition{id,name,description}} }`;
+        const preferredLanguageParam = preferredLanguageCode !== null ? `, preferredLanguage: "${preferredLanguageCode}"` : '';
+        const query = `query { productPrices(productDefinitionId: "${productDefinitionId}"${orderParam}${customerParam}${salesChannelParam}${preferredLanguageParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,productDefinition{id,name,description}} }`;
         const response = await this.client.sendQuery<GetProductPricesResponse>(query);
         return response.data.productPrices;
     }
