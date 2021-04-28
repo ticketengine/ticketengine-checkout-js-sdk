@@ -59,6 +59,7 @@ export class Cart {
         if(options.salesChannelId) this.setSalesChannelId(options.salesChannelId);
         if(options.registerId) this.setRegisterId(options.registerId);
         if(options.customerId) Cart.setCustomerId(options.customerId);
+        if(options.preferredLanguageCode) this.setPreferredLanguageCode(options.preferredLanguageCode);
     }
 
 
@@ -185,8 +186,9 @@ export class Cart {
     public async createOrder(): Promise<void> {
         const isPending = new IsPending();
         const customerId = this.hasCustomerId() ? this.getCustomerId() : undefined;
+        const preferredLanguageCode = this.hasPreferredLanguageCode() ? this.getPreferredLanguageCode() : undefined;
         localStorage.removeItem("te-order");
-        const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId}, [0, 1000, 1000, 1000, 3000, 5000]);
+        const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId, preferredLanguageCode}, [0, 1000, 1000, 1000, 3000, 5000]);
         await this.fetchOrder(response.data.orderId, isPending, this.retryPolicy)
     }
 
@@ -590,6 +592,25 @@ export class Cart {
         localStorage.removeItem("te-register-id");
     }
 
+    public getPreferredLanguageCode(): string {
+        const preferredLanguageCode = localStorage.getItem("te-preferred-language-code");
+        if(preferredLanguageCode) {
+            return preferredLanguageCode;
+        }
+        throw new Error('No preferred language code found.');
+    }
+
+    public setPreferredLanguageCode(preferredLanguageCode: string): void {
+        localStorage.setItem("te-preferred-language-code", preferredLanguageCode);
+    }
+
+    public hasPreferredLanguageCode(): boolean {
+        return localStorage.getItem("te-preferred-language-code") !== null;
+    }
+
+    public clearPreferredLanguageCode(): void {
+        localStorage.removeItem("te-preferred-language-code");
+    }
 
 
     private static isAccessCartItem(item: AddItem): item is AddAccessItem {
@@ -619,6 +640,7 @@ export interface CartOptions {
     adminApiUrl?: string,
     graphApiUrl?: string
     clearTokenOnSetAuthUrl?: boolean
+    preferredLanguageCode?: string
 }
 
 
