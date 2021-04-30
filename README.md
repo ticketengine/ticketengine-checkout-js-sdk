@@ -70,7 +70,6 @@ salesChannelId | Uuid of the sales channel
 preferredLanguageCode | ISO 639-1 language code
 
 ##### Returns
-Array of event prices
 ```json
 [
     {
