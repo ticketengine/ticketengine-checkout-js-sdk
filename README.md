@@ -1,19 +1,20 @@
+# Ticket Engine Checkout SDK
+JavaScript SDK checkout web client for TicketEngine. Can be used to create your own shopping cart implementation.
 
-
-# Installation
+## Installation
 ```
 npm install ticketengine-checkout-sdk
 ```
 
 
-# Setup
+## Setup
 Create an new instance of the cart.
 ```js
 const options = {};
 const cart = new Cart(options);
 ```
 
-## Cart options
+### Cart options
 Option | Description
 :--- | :---
 salesChannelId* | Uuid of the sales channel
@@ -28,21 +29,21 @@ adminApiUrl | Url of the admin api, production url is default
 graphApiUrl | Url of the graph api, production url is default
 * Required options
 
-# Usage
+## Usage
 
-## Methods
+### Methods
 
-### login
+#### login
 ```cart.login(username, password)```
 
-### isTokenExpired
+#### isTokenExpired
 ```cart.isTokenExpired()```
 Returns true if oauth token is expired
 
-### getEvent
+#### getEvent
 ```cart.getEvent(eventId)```
 
-#### Returns
+##### Returns
 ```json
 {
     "id": "dfe2243c-a2b6-11eb-bac0-0242ac12001c",
@@ -57,10 +58,10 @@ Returns true if oauth token is expired
 }
 ```
 
-### getEventPrices
+#### getEventPrices
 ```cart.getEventPrices(eventId, customerId, salesChannelId, preferredLanguageCode)```
 
-#### Parameters
+##### Parameters
 Parameter | Description
 :--- | :---
 eventId* | Uuid of the event
@@ -68,7 +69,7 @@ customerId | Uuid of the customer
 salesChannelId | Uuid of the sales channel
 preferredLanguageCode | ISO 639-1 language code
 
-#### Returns
+##### Returns
 Array of event prices
 ```json
 [
@@ -95,10 +96,10 @@ Array of event prices
 ]
 ```
 
-### getProductDefinition
+#### getProductDefinition
 ```cart.getProductDefinition(productDefinitionId)```
 
-#### Returns
+##### Returns
 ```json
 {
     "id": "f5088f54-a2b6-11eb-a791-0242ac12001b",
@@ -107,10 +108,10 @@ Array of event prices
 }
 ```
 
-### getProductPrices
+#### getProductPrices
 ```cart.getProductPrices(productDefinitionId, customerId, salesChannelId, preferredLanguageCode)```
 
-#### Parameters
+##### Parameters
 Parameter | Description
 :--- | :---
 productDefinitionId* | Uuid of the product definition
@@ -118,7 +119,7 @@ customerId | Uuid of the customer
 salesChannelId | Uuid of the sales channel
 preferredLanguageCode | ISO 639-1 language code
 
-#### Returns
+##### Returns
 ```json
 {
     "conditionId": "f51bcc04-a2b6-11eb-b9e3-0242ac12001b",
@@ -141,10 +142,10 @@ preferredLanguageCode | ISO 639-1 language code
 }
 ```
 
-### getCustomer
+#### getCustomer
 ```cart.getCustomer(customerId)```
 
-#### Returns
+##### Returns
 ```json
 {
     "id": "db20cd40-a2b6-11eb-a0f0-0242ac12001a",
@@ -159,10 +160,10 @@ preferredLanguageCode | ISO 639-1 language code
 }
 ```
 
-### getOrder
+#### getOrder
 ```cart.getOrder(orderId, validator, retryPolicy, forceReload)```
 
-#### Parameters
+##### Parameters
 Parameter | Description
 :--- | :---
 orderId* | Uuid of the order
@@ -170,7 +171,7 @@ validator | Instance of class that implements the OrderValidator interface. See 
 retryPolicy | Array of values in milliseconds to wait until retry. Continue retry until validator returns true. Value is shifted from array and then wait value amount of milliseconds before next try.
 forceReload | If set to true force to call the api and not get cached order from localstorage.
 
-#### Returns
+##### Returns
 ```json
 {
     "id": "0580948e-a2b8-11eb-ba91-0242ac12001d",
@@ -223,26 +224,26 @@ forceReload | If set to true force to call the api and not get cached order from
 }
 ```
 
-### createOrder
+#### createOrder
 ```cart.createOrder()```
 Create a new empty order.
 
-### getOrderId
+#### getOrderId
 ```cart.getOrderId()```
 Returns order id from cache order in localstorage.
 
-### cancelOrder
+#### cancelOrder
 ```cart.cancelOrder(orderId)```
 Cancel order. If no orderId is supplied cancel order cached in localstorage.
 
-### cancelReservation
+#### cancelReservation
 ```cart.cancelReservation(orderId)```
 Cancel reserved order. If no orderId is supplied cancel order cached in localstorage.
 
-### addItems
+#### addItems
 ```cart.addItems(items)```
 
-#### Parameters
+##### Parameters
 ```json
 [
   {
@@ -258,10 +259,10 @@ Cancel reserved order. If no orderId is supplied cancel order cached in localsto
 ]
 ```
 
-### removeItems
+#### removeItems
 ```cart.removeItems(items)```
 
-#### Parameters
+##### Parameters
 ```json
 [
   {
@@ -270,35 +271,35 @@ Cancel reserved order. If no orderId is supplied cancel order cached in localsto
 ]
 ```
 
-### changeItems
+#### changeItems
 ```cart.changeItems(addItems, removeItems)```
 
-#### Parameters
+##### Parameters
 Parameter | Description
 :--- | :---
 addItems | see cart.addItems
 removeItems | see cart.removeItems
 
-### getItemCount
+#### getItemCount
 ```cart.getItemCount()```
 Returns the number of items in cart
 
-### addToken
+#### addToken
 ```cart.addToken(token)```
 Add a coupon code to cached order in localstorage.
 
-#### Parameters
+##### Parameters
 Parameter | Description
 :--- | :---
 token | Coupon code
 
-### clearOrder
+#### clearOrder
 ```cart.clearOrder()```
 Removes cached order from localstorage, does not cancel order.
 
 
 
-## Order validators
+### Order validators
 Order validators implement the OrderValidator interface. The validate method returns true if the order is valid.
 ```typescript
 export interface OrderValidator {
@@ -306,7 +307,7 @@ export interface OrderValidator {
 }
 ```
 
-### List validators
+#### List validators
 - IsCompleted
 - IsTimeout
 - IsCanceled
