@@ -247,14 +247,14 @@ Cancel reserved order. If no orderId is supplied cancel order cached in localsto
 ```json
 [
   {
-    eventManagerId: 'de567e74-a2b6-11eb-b2ec-0242ac12001c',
-    eventId: 'dfe2243c-a2b6-11eb-bac0-0242ac12001c',
-    accessDefinitionId: 'e2b2cf68-a2b6-11eb-b369-0242ac12001c',
-    requestedConditionPath: ["348b0d32-a2b7-11eb-806b-0242ac12001c", "348b090e-a2b7-11eb-82b3-0242ac12001c", "348b0170-a2b7-11eb-ac8f-0242ac12001c"]
+    "eventManagerId": "de567e74-a2b6-11eb-b2ec-0242ac12001c",
+    "eventId": "dfe2243c-a2b6-11eb-bac0-0242ac12001c",
+    "accessDefinitionId": "e2b2cf68-a2b6-11eb-b369-0242ac12001c",
+    "requestedConditionPath": ["348b0d32-a2b7-11eb-806b-0242ac12001c", "348b090e-a2b7-11eb-82b3-0242ac12001c", "348b0170-a2b7-11eb-ac8f-0242ac12001c"]
   },
   {
-    productDefinitionId: 'f5088f54-a2b6-11eb-a791-0242ac12001b',
-    requestedConditionPath: ["348b0d32-a2b7-11eb-806b-0242ac12001c", "348b090e-a2b7-11eb-82b3-0242ac12001c", "348b0170-a2b7-11eb-ac8f-0242ac12001c"]
+    "productDefinitionId": "f5088f54-a2b6-11eb-a791-0242ac12001b",
+    "requestedConditionPath": ["348b0d32-a2b7-11eb-806b-0242ac12001c", "348b090e-a2b7-11eb-82b3-0242ac12001c", "348b0170-a2b7-11eb-ac8f-0242ac12001c"]
   }
 ]
 ```
@@ -266,7 +266,7 @@ Cancel reserved order. If no orderId is supplied cancel order cached in localsto
 ```json
 [
   {
-    orderLineItemId: 'ac088f54-a2b6-11eb-a791-0242ac12001b'
+    "orderLineItemId": "ac088f54-a2b6-11eb-a791-0242ac12001b"
   }
 ]
 ```
