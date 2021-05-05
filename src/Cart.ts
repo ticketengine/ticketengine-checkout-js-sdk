@@ -368,7 +368,7 @@ export class Cart {
 
 
     // public async checkout(email?: string, paymentMethod?: string): Promise<CheckoutResult> {
-    public async checkout(email?: string, payments?: Array<Payment>, remark?: string): Promise<CheckoutResult> {
+    public async checkout(email?: string, payments?: Array<Payment>, remark?: string, optInOn?: string[]): Promise<CheckoutResult> {
         const paymentResults: Array<PaymentResult> = [];
         const canCheckout = new CanCheckout();
         const canPay = new CanPay();
@@ -383,6 +383,7 @@ export class Cart {
                 aggregateId: orderId,
                 customerEmail: email,
                 customerRemark: remark,
+                optInOn: optInOn
             }, this.retryPolicy);
             await this.fetchOrder(this.getOrderId(), isCheckedOutOrCompleted, this.retryPolicy);
         }
