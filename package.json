@@ -17,7 +17,7 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "ticketengine-sdk": "^1.18.1"
+    "ticketengine-sdk": "^1.22.2"
   },
   "author": "Tom Timmerman <tom@ticketengine.nl>",
   "license": "ISC",
