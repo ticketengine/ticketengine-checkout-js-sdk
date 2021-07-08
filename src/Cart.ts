@@ -3,10 +3,19 @@ import {
     GetCustomerResponse,
     GetEventPricesResponse,
     GetEventResponse,
-    GetMeResponse,
+    GetMeResponse, GetOrderMessageResponse,
     GetOrderResponse, GetProductDefinitionResponse, GetProductPricesResponse
 } from "./QueryResponse";
-import {Customer, EventPrice, LineItemStatus, Order, OrderStatus, ProductDefinition, ProductPrice} from "./Model";
+import {
+    Customer,
+    EventPrice,
+    LineItemStatus,
+    Order,
+    OrderMessage,
+    OrderStatus,
+    ProductDefinition,
+    ProductPrice
+} from "./Model";
 import {
     CanCheckout,
     CanPay,
@@ -139,6 +148,18 @@ export class Cart {
         const query = `query { customer(id: "${customerId}"){id,firstName,lastName,fullName,sortName,birthDate,gender,email,tags{id,name}} }`;
         const response = await this.client.sendQuery<GetCustomerResponse>(query);
         return response.data.customer;
+    }
+
+    public async getOrderMessages(stage: string, orderId: string|null, eventId: string|null, productDefinitionId: string|null, customerId: string|null = null, salesChannelId: string|null = null, preferredLanguageCode: string|null = null): Promise<OrderMessage[]> {
+        const orderParam = orderId !== null ? `, orderId: "${orderId}"` : '';
+        const eventParam = eventId !== null ? `, eventId: "${eventId}"` : '';
+        const productDefinitionParam = productDefinitionId !== null ? `, productDefinitionId: "${productDefinitionId}"` : '';
+        const customerParam = customerId !== null ? `, customerId: "${customerId}"` : '';
+        const salesChannelParam = salesChannelId !== null ? `, salesChannelId: "${salesChannelId}"` : '';
+        const preferredLanguageParam = preferredLanguageCode !== null ? `, preferredLanguage: "${preferredLanguageCode}"` : '';
+        const query = `query { orderMessage(stage: "${stage}"${orderParam}${eventParam}${productDefinitionParam}${customerParam}${salesChannelParam}${preferredLanguageParam}){id,message}}`;
+        const response = await this.client.sendQuery<GetOrderMessageResponse>(query);
+        return response.data.orderMessage;
     }
 
 

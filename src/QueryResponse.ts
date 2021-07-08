@@ -1,4 +1,4 @@
-import {Customer, EventPrice, Order, ProductDefinition, ProductPrice} from "./Model";
+import {Customer, EventPrice, Order, OrderMessage, ProductDefinition, ProductPrice} from "./Model";
 
 export interface QueryResponse {
 
@@ -48,3 +48,8 @@ export interface GetCustomerResponse extends QueryResponse {
     };
 }
 
+export interface GetOrderMessageResponse extends QueryResponse {
+    data: {
+        orderMessage: OrderMessage[]
+    };
+}

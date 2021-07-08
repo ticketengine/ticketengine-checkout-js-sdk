@@ -170,3 +170,9 @@ export interface Currency {
     symbol: string;
 }
 
+export interface OrderMessage {
+    id: string;
+    message: string;
+}
+
+
