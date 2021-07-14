@@ -104,7 +104,7 @@ export class Cart {
 
 
     public async getEvent(eventId: string): Promise<Event> {
-        const query = `query { event(id: "${eventId}"){id,eventManagerId,name,description,location,start,end,totalCapacity,availableCapacity} }`;
+        const query = `query { event(id: "${eventId}"){id,eventManagerId,name,description,location,start,end,totalCapacity,availableCapacity,capacityLocationSummery{capacityLocationPath,name,capacity,issued,reserved,granted,available,used,start,end},hasTimeslots} }`;
         const response = await this.client.sendQuery<GetEventResponse>(query);
         return response.data.event;
     }
@@ -146,7 +146,7 @@ export class Cart {
 
     public async getCustomer(customerId: string): Promise<Customer> {
         const query = `query { customer(id: "${customerId}"){id,firstName,lastName,fullName,sortName,birthDate,gender,email,tags{id,name}} }`;
-        const response = await this.client.sendQuery<GetCustomerResponse>(query);
+        const response = await this.client.sendQuery<GetCustomerResponse>(query, []);
         return response.data.customer;
     }
 
@@ -158,7 +158,7 @@ export class Cart {
         const salesChannelParam = salesChannelId !== null ? `, salesChannelId: "${salesChannelId}"` : '';
         const preferredLanguageParam = preferredLanguageCode !== null ? `, preferredLanguage: "${preferredLanguageCode}"` : '';
         const query = `query { orderMessage(stage: "${stage}"${orderParam}${eventParam}${productDefinitionParam}${customerParam}${salesChannelParam}${preferredLanguageParam}){id,message}}`;
-        const response = await this.client.sendQuery<GetOrderMessageResponse>(query);
+        const response = await this.client.sendQuery<GetOrderMessageResponse>(query, []);
         return response.data.orderMessage;
     }
 
