@@ -110,15 +110,16 @@ export class Cart {
     }
 
 
-    public async getEventPrices(eventId: string, customerId: string|null = null, salesChannelId: string|null = null, preferredLanguageCode: string|null = null): Promise<Array<EventPrice>> {
+    public async getEventPrices(eventId: string, customerId: string|null = null, salesChannelId: string|null = null, preferredLanguageCode: string|null = null, capacityLocationPath: string|null = null): Promise<Array<EventPrice>> {
         const inFinalState = new IsInFinalState();
         const orderParam = this.hasOrder() && !inFinalState.validate(await this.getOrder(this.getOrderId())) ? `, orderId: "${this.getOrderId()}"` : '';
         let customerParam = this.hasCustomerId() ? `, customerId: "${this.getCustomerId()}"` : '';
         customerParam = customerParam !== '' && customerId !== null ? `, customerId: "${customerId}"` : '';
         const salesChannelParam = salesChannelId !== null ? `, salesChannelId: "${salesChannelId}"` : '';
         const preferredLanguageParam = preferredLanguageCode !== null ? `, preferredLanguage: "${preferredLanguageCode}"` : '';
+        const capacityLocationPathParam = capacityLocationPath !== null ? `, capacityLocationPath: "${capacityLocationPath}"` : '';
         // const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}){conditionId,price,currencyCode,limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
-        const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}${salesChannelParam}${preferredLanguageParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
+        const query = `query { eventPrices(eventId: "${eventId}"${orderParam}${customerParam}${salesChannelParam}${preferredLanguageParam}${capacityLocationPathParam}){conditionId,price,currency{code,name,exponent,symbol},limit,tax,description,conditionPath,accessDefinition{id,name,description,capacityLocations}} }`;
         const response = await this.client.sendQuery<GetEventPricesResponse>(query);
         return response.data.eventPrices;
     }
