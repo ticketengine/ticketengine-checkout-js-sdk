@@ -3,13 +3,13 @@ import {
     GetCustomerResponse,
     GetEventPricesResponse,
     GetEventResponse,
-    GetMeResponse, GetOrderMessageResponse,
+    GetMeResponse, GetOffersResponse, GetOrderMessageResponse,
     GetOrderResponse, GetProductDefinitionResponse, GetProductPricesResponse
 } from "./QueryResponse";
 import {
     Customer,
     EventPrice,
-    LineItemStatus,
+    LineItemStatus, Offer,
     Order,
     OrderMessage,
     OrderStatus,
@@ -163,6 +163,15 @@ export class Cart {
         return response.data.orderMessage;
     }
 
+    public async getOffers(orderId: string|null, customerId: string|null = null, salesChannelId: string|null = null, preferredLanguageCode: string|null = null): Promise<Offer[]> {
+        const customerParam = customerId ? `, customerId: "${customerId}"` : '';
+        const salesChannelParam = salesChannelId ? `, salesChannelId: "${salesChannelId}"` : '';
+        const preferredLanguageParam = preferredLanguageCode ? `, preferredLanguage: "${preferredLanguageCode}"` : '';
+        const query = `query { offers(orderId: "${orderId}"${customerParam}${salesChannelParam}${preferredLanguageParam}){id,name,price,tax,limit,currencyCode,currency{code,name,exponent,symbol},taxes{value,type,description}}}`;
+        const response = await this.client.sendQuery<GetOffersResponse>(query, []);
+        return response.data.offers;
+    }
+
 
     public async getOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = [], forceReload: boolean = false): Promise<Order> {
         if(forceReload) {
@@ -179,11 +188,6 @@ export class Cart {
 
     private async fetchOrder(orderId: string, validator?: OrderValidator, retryPolicy: Array<number> = []): Promise<Order> {
         try {
-            // const query = `query { me{order(id: "${orderId}"){id,status,customer{id,fullName},paymentStatus,paymentUrl,payments{id,currencyCode,amount,status},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currencyCode,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currencyCode,limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}}}}} }`;
-            // const query = `query { me{order(id: "${orderId}"){id,status,customer{id,fullName,email},paymentStatus,paymentUrl,payments{id,currency{code,name,exponent,symbol},amount,status,psp,method},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency{code,name,exponent,symbol},amount},requiredLoyaltyCardPayments{currency{code,name,exponent,symbol},cardType,amount},lineItems{ ... on AccessLineItem {id,type,status,price,tax,currency{code,name,exponent,symbol},limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} ... on ProductLineItem {id,type,status,name,price,tax,currency{name,code,exponent,symbol},requestedConditionPath,productId,productDefinition{id,name},product{id,status}} }}} }`;
-            // const query = `query { me{order(id: "${orderId}"){id,status,number,email,customer{id,fullName,email},paymentStatus,paymentUrl,payments{id,currency{code,name,exponent,symbol},amount,status,psp,method},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency{code,name,exponent,symbol},amount},requiredLoyaltyCardPayments{currency{code,name,exponent,symbol},cardType,amount},lineItems{ ... on AccessLineItem {id,packageOrderLineItemId,type,status,price,tax,currency{code,name,exponent,symbol},limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} ... on ProductLineItem {id,packageOrderLineItemId,type,status,name,price,tax,currency{name,code,exponent,symbol},requestedConditionPath,productId,productDefinition{id,name},product{id,status}} }}} }`;
-            // const query = `query { me{order(id: "${orderId}"){id,status,number,email,customer{id,fullName,email},paymentStatus,paymentUrl,payments{id,currency{code,name,exponent,symbol},amount,status,psp,method},refunds{id,currency{code,name,exponent,symbol},amount,status,refundMethod},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency{code,name,exponent,symbol},amount},requiredLoyaltyCardPayments{currency{code,name,exponent,symbol},cardType,amount},lineItems{ ... on AccessLineItem {id,packageOrderLineItemId,type,status,price,tax,currency{code,name,exponent,symbol},limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,event{id,eventManagerId,name,location,start,end,availableCapacity}} ... on ProductLineItem {id,packageOrderLineItemId,type,status,name,price,tax,currency{name,code,exponent,symbol},requestedConditionPath,productId,productDefinition{id,name,apiConfig{... on MembershipApiConfig{source}, ... on CreditAccountApiConfig{source}}},product{id,status}} }}} }`;
-            // const query = `query { me{order(id: "${orderId}"){id,status,number,email,customer{id,fullName,email},paymentStatus,paymentUrl,payments{id,currency{code,name,exponent,symbol},amount,status,psp,method},refunds{id,currency{code,name,exponent,symbol},amount,status,refundMethod},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency{code,name,exponent,symbol},amount},requiredLoyaltyCardPayments{currency{code,name,exponent,symbol},cardType,amount},lineItems{ ... on AccessLineItem {id,packageOrderLineItemId,type,status,price,tax,currency{code,name,exponent,symbol},limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,access{id,tokens},event{id,eventManagerId,name,location,start,end,availableCapacity}} ... on ProductLineItem {id,packageOrderLineItemId,type,status,name,price,tax,currency{name,code,exponent,symbol},requestedConditionPath,productId,productDefinition{id,name,apiConfig{... on MembershipApiConfig{source}, ... on CreditAccountApiConfig{source}}},product{id,status}} }}} }`;
             const query = `query { me{order(id: "${orderId}"){id,status,number,email,customer{id,fullName,email},paymentStatus,paymentUrl,payments{id,currency{code,name,exponent,symbol},amount,status,psp,method},refunds{id,currency{code,name,exponent,symbol},amount,status,refundMethod},totalPrice,totalTax,createDate,expiresOn,tokens{id,typeId,token},requiredPayments{currency{code,name,exponent,symbol},amount},requiredLoyaltyCardPayments{currency{code,name,exponent,symbol},cardType,amount},lineItems{ ... on AccessLineItem {id,packageOrderLineItemId,type,status,price,tax,currency{code,name,exponent,symbol},limit,name,accessDefinition{id},capacityLocationPath,requestedConditionPath,accessId,access{id,tokens},event{id,eventManagerId,name,location,start,end,availableCapacity}} ... on ProductLineItem {id,packageOrderLineItemId,type,status,name,price,tax,currency{name,code,exponent,symbol},requestedConditionPath,productId,productDefinition{id,name,apiConfig{... on MembershipApiConfig{source}, ... on CreditAccountApiConfig{source}}},product{id,status}} },aggregatedLineItems{... on AggregatedAccessLineItem {id,type,orderLineItemIds,price,tax,totalPrice,totalTax,currency{name,code,exponent,symbol},limit,quantity,name,requestedConditionPath,accessIds,event{id,eventManagerId,name,start,location,end,availableCapacity},accessDefinition{name}} ... on AggregatedProductLineItem {id,type,orderLineItemIds,price,tax,totalPrice,totalTax,currency{name,code,exponent,symbol},limit,quantity,name,requestedConditionPath,productIds,productDefinition{id,name,apiConfig{... on MembershipApiConfig{source}, ... on CreditAccountApiConfig{source}}}}}}} }`;
             const response = await this.client.sendQuery<GetMeResponse>(query, []);
             const order = response.data.me.order;
@@ -372,6 +376,15 @@ export class Cart {
         const orderId = this.getOrderId();
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
         await this.fetchOrder(orderId, hasToken, this.retryPolicy);
+    }
+
+
+    public async acceptOffer(offerId: string): Promise<void> {
+        const retryPolicy = [0, 1000];
+        const orderId = this.getOrderId();
+        const response = await this.client.offer.acceptOffer({aggregateId: orderId, offerId}, retryPolicy);
+        const validator = new ItemsHaveStatus([response.data.orderLineItemId], LineItemStatus.reserved);
+        await this.fetchOrder(orderId, validator, this.retryPolicy);
     }
 
 

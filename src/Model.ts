@@ -175,4 +175,13 @@ export interface OrderMessage {
     message: string;
 }
 
+export interface Offer {
+    id: string;
+    name: string;
+    price: number;
+    tax: number;
+    currency: Currency;
+    limit?: number;
+}
+
 
