@@ -7,7 +7,7 @@ import {
     GetOrderResponse, GetProductDefinitionResponse, GetProductPricesResponse
 } from "./QueryResponse";
 import {
-    Customer,
+    Customer, ErrorMessages,
     EventPrice,
     LineItemStatus, Offer,
     Order,
@@ -25,7 +25,7 @@ import {
     IsInFinalState,
     IsPending,
     IsReserved,
-    ItemsHaveStatus,
+    ItemsHaveStatus, ItemsHaveStatusOneOf,
     OrderValidator,
     ValidateItemsStatus
 } from "./OrderValidator";
@@ -41,6 +41,7 @@ export class Cart {
     // oauthClientSecret: string;
     // oauthScope: string;
     retryPolicy: number[] = [0, 500, 500, 500, 500, 500, 1000, 1000, 1000, 1000, 1000, 3000, 3000, 3000, 5000, 5000];
+    errorMessages: ErrorMessages = {};
 
     // constructor(salesChannelId: string, registerId: string, customerId?: string, clientId?: string, clientSecret?: string, scope?: string, authApiUrl?: string, adminApiUrl?: string, graphApiUrl?: string) {
     constructor(options: CartOptions) {
@@ -69,6 +70,7 @@ export class Cart {
         if(options.registerId) this.setRegisterId(options.registerId);
         if(options.customerId) Cart.setCustomerId(options.customerId);
         if(options.preferredLanguageCode) this.setPreferredLanguageCode(options.preferredLanguageCode);
+        if(options.errorMessages) this.setErrorMessages(options.errorMessages);
     }
 
 
@@ -180,7 +182,8 @@ export class Cart {
 
         const order = localStorage.getItem("te-order");
         if(!order) {
-            throw new Error('No order found.');
+            const message = this.errorMessages && this.errorMessages.orderNotFound || 'No order found.';
+            throw new Error(message);
         }
         return JSON.parse(order);
     }
@@ -197,7 +200,8 @@ export class Cart {
             // if not in desired state, retry query
             if(validator && !validator.validate(order)) {
                 const sleepTime = retryPolicy.shift();
-                if(sleepTime === undefined) throw new Error('Retry attempts exceeded.'); // abort retry, retries attempts exceeded
+                const message = this.errorMessages && this.errorMessages.retryAttemptsExceeded || 'Retry attempts exceeded.';
+                if(sleepTime === undefined) throw new Error(message); // abort retry, retries attempts exceeded
                 await this.sleep(sleepTime); // wait x milliseconds
                 return await this.fetchOrder(orderId, validator, retryPolicy) // retry
             }
@@ -259,8 +263,18 @@ export class Cart {
             operations: this.mapToCartOperations(items)
         }, this.retryPolicy);
 
-        const validator = new ItemsHaveStatus(response.data.orderLineItemIds, LineItemStatus.reserved);
-        await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
+        // const validator = new ItemsHaveStatus(response.data.orderLineItemIds, LineItemStatus.reserved);
+        // await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
+
+        //
+        const validatorItemsInFinalState = new ItemsHaveStatusOneOf(response.data.orderLineItemIds, [LineItemStatus.reserved, LineItemStatus.removed]);
+        const order = await this.fetchOrder(this.getOrderId(), validatorItemsInFinalState, this.retryPolicy);
+
+        const validatorAllItemsConfirmed = new ItemsHaveStatusOneOf(response.data.orderLineItemIds, [LineItemStatus.reserved]);
+        if(!validatorAllItemsConfirmed.validate(order)) {
+            const message = this.errorMessages && this.errorMessages.couldNotAddItems || 'Could not add items to cart.';
+            throw new Error(message); //
+        }
     }
 
 
@@ -347,7 +361,8 @@ export class Cart {
                     data: item
                 })
             } else {
-                throw new Error('Cannot add item. Unknown item type.');
+                const message = this.errorMessages && this.errorMessages.unknownItemType || 'Cannot add item. Unknown item type.';
+                throw new Error(message);
             }
         });
 
@@ -501,7 +516,8 @@ export class Cart {
         if(paymentId) {
             return {paymentId, action}
         }
-        throw new Error('Create payment failed.');
+        const message = this.errorMessages && this.errorMessages.createPaymentFailed || 'Create payment failed.';
+        throw new Error(message);
     }
 
 
@@ -519,7 +535,8 @@ export class Cart {
             const order = JSON.parse(orderString);
             return order.id;
         }
-        throw new Error('No order found.');
+        const message = this.errorMessages && this.errorMessages.orderNotFound || 'No order found.';
+        throw new Error(message);
     }
 
     private static setOrder(order: Order): void {
@@ -580,7 +597,8 @@ export class Cart {
         if(customerId) {
             return customerId;
         }
-        throw new Error('No customer id found.');
+        const message = this.errorMessages && this.errorMessages.customerNotFound || 'No customer found.';
+        throw new Error(message);
     }
 
     public hasCustomerId(): boolean {
@@ -595,7 +613,8 @@ export class Cart {
         if(salesChannelId) {
             return salesChannelId;
         }
-        throw new Error('No sales channel id found.');
+        const message = this.errorMessages && this.errorMessages.salesChannelNotFound || 'No sales channel found.';
+        throw new Error(message);
     }
 
     public setSalesChannelId(salesChannelId: string): void {
@@ -616,7 +635,8 @@ export class Cart {
         if(registerId) {
             return registerId;
         }
-        throw new Error('No register id found.');
+        const message = this.errorMessages && this.errorMessages.registerNotFound || 'No register found.';
+        throw new Error(message);
     }
 
     public setRegisterId(registerId: string): void {
@@ -636,7 +656,8 @@ export class Cart {
         if(preferredLanguageCode) {
             return preferredLanguageCode;
         }
-        throw new Error('No preferred language code found.');
+        const message = this.errorMessages && this.errorMessages.noPreferredLanguageSet || 'No preferred language code found.';
+        throw new Error(message);
     }
 
     public setPreferredLanguageCode(preferredLanguageCode: string): void {
@@ -651,6 +672,10 @@ export class Cart {
         localStorage.removeItem("te-preferred-language-code");
     }
 
+
+    public setErrorMessages(errorMessages: ErrorMessages): void {
+        this.errorMessages = errorMessages;
+    }
 
     private static isAccessCartItem(item: AddItem): item is AddAccessItem {
         return (item as AddAccessItem).eventId !== undefined;
@@ -680,6 +705,7 @@ export interface CartOptions {
     graphApiUrl?: string
     clearTokenOnSetAuthUrl?: boolean
     preferredLanguageCode?: string
+    errorMessages?: ErrorMessages
 }
 
 

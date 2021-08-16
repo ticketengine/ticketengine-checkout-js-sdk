@@ -180,6 +180,32 @@ export class ItemsHaveStatus implements OrderValidator {
 }
 
 
+export class ItemsHaveStatusOneOf implements OrderValidator {
+    private readonly orderLineIds: string[];
+    private status: LineItemStatus[];
+
+    constructor(orderLineIds: string[], status: LineItemStatus[]) {
+        this.orderLineIds = orderLineIds;
+        this.status = status;
+    }
+
+    validate(order: Order): Boolean {
+        if(!order || !order.lineItems) {
+            return false;
+        }
+        // for(let i = 0; i < this.orderLineIds.length; i++){
+        //     if(!order.lineItems.filter(l => this.status.includes(l.status)).map(l => l.id).includes(this.orderLineIds[i])) return false;
+        // }
+        for(let i = 0; i < order.lineItems.length; i++){
+            if(this.orderLineIds.includes(order.lineItems[i].id) && !this.status.includes(order.lineItems[i].status)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+
 export class NeedsPaymentWithCurrency implements OrderValidator {
     private readonly currencyCode: string;
 

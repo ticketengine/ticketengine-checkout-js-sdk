@@ -185,3 +185,16 @@ export interface Offer {
 }
 
 
+export interface ErrorMessages {
+    orderNotFound?: string;
+    customerNotFound?: string;
+    salesChannelNotFound?: string;
+    registerNotFound?: string;
+    noPreferredLanguageSet?: string;
+    retryAttemptsExceeded?: string;
+    couldNotAddItems?: string;
+    unknownItemType?: string;
+    createPaymentFailed?: string;
+}
+
+
