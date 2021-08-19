@@ -360,6 +360,11 @@ export class Cart {
                     operation: CartOperationType.AddProductItem,
                     data: item
                 })
+            } else if(Cart.isBatchAccessCartItems(item)) {
+                operations.push({
+                    operation: CartOperationType.BatchAddAccessItems,
+                    data: item
+                })
             } else {
                 const message = this.errorMessages && this.errorMessages.unknownItemType || 'Cannot add item. Unknown item type.';
                 throw new Error(message);
@@ -678,11 +683,15 @@ export class Cart {
     }
 
     private static isAccessCartItem(item: AddItem): item is AddAccessItem {
-        return (item as AddAccessItem).eventId !== undefined;
+        return (item as AddAccessItem).eventId !== undefined && (item as BatchAddAccessItems).quantity === undefined;
     }
 
     private static isProductCartItem(item: AddItem): item is AddProductItem {
         return (item as AddProductItem).productDefinitionId !== undefined;
+    }
+
+    private static isBatchAccessCartItems(item: AddItem): item is AddAccessItem {
+        return (item as BatchAddAccessItems).eventId !== undefined && (item as BatchAddAccessItems).quantity !== undefined;
     }
 
     private async sleep(ms: number): Promise<any> {
@@ -730,6 +739,15 @@ export interface AddProductItem extends AddItem {
 
 export interface RemoveItem {
     orderLineItemId: string;
+}
+
+export interface BatchAddAccessItems extends AddItem {
+    eventManagerId: string;
+    eventId: string;
+    accessDefinitionId: string;
+    quantity: number;
+    requestedConditionPath: Array<string>;
+    capacityLocationPath?: string;
 }
 
 export interface CheckoutResult {
