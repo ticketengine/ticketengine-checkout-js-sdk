@@ -14,6 +14,7 @@ export interface GetMeResponse extends QueryResponse {
     data: {
         me: {
             order: Order
+            cart: Order
         }
     };
 }
