@@ -228,7 +228,7 @@ export class Cart {
         const preferredLanguageCode = this.hasPreferredLanguageCode() ? this.getPreferredLanguageCode() : undefined;
         localStorage.removeItem("te-order");
         const response = await this.client.order.createOrder({salesChannelId: this.getSalesChannelId(), registerId: this.getRegisterId(), customerId, preferredLanguageCode}, [0, 1000, 1000, 1000, 3000, 5000]);
-        await this.fetchOrder(response.data.orderId, isPending, this.retryPolicy)
+        await this.fetchOrder(response.data.orderId, isPending, [...this.retryPolicy])
     }
 
 
@@ -236,7 +236,7 @@ export class Cart {
         if(!orderId) {
             orderId = this.getOrderId()
         }
-        await this.client.order.cancelOrder({aggregateId: orderId, reason: reason}, this.retryPolicy);
+        await this.client.order.cancelOrder({aggregateId: orderId, reason: reason}, [...this.retryPolicy]);
         if(this.hasOrder() && this.getOrderId() === orderId) {
             localStorage.removeItem("te-order");
         }
@@ -247,7 +247,7 @@ export class Cart {
         if(!orderId) {
             orderId = this.getOrderId()
         }
-        await this.client.order.cancelOrderReservation({aggregateId: orderId, reason: reason}, this.retryPolicy);
+        await this.client.order.cancelOrderReservation({aggregateId: orderId, reason: reason}, [...this.retryPolicy]);
         if(this.hasOrder() && this.getOrderId() === orderId) {
             localStorage.removeItem("te-order");
         }
@@ -267,14 +267,14 @@ export class Cart {
         const response = await this.client.order.cartBatchOperation({
             aggregateId: this.getOrderId(),
             operations: this.mapToCartOperations(items)
-        }, this.retryPolicy);
+        }, [...this.retryPolicy]);
 
         // const validator = new ItemsHaveStatus(response.data.orderLineItemIds, LineItemStatus.reserved);
-        // await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
+        // await this.fetchOrder(this.getOrderId(), validator, [...this.retryPolicy]);
 
         //
         const validatorItemsInFinalState = new ItemsHaveStatusOneOf(response.data.orderLineItemIds, [LineItemStatus.reserved, LineItemStatus.removed]);
-        const order = await this.fetchOrder(this.getOrderId(), validatorItemsInFinalState, this.retryPolicy);
+        const order = await this.fetchOrder(this.getOrderId(), validatorItemsInFinalState, [...this.retryPolicy]);
 
         const validatorAllItemsConfirmed = new ItemsHaveStatusOneOf(response.data.orderLineItemIds, [LineItemStatus.reserved]);
         if(!validatorAllItemsConfirmed.validate(order)) {
@@ -313,10 +313,10 @@ export class Cart {
         await this.client.order.cartBatchOperation({
             aggregateId: this.getOrderId(),
             operations: this.mapToCartOperations([], items)
-        }, this.retryPolicy);
+        }, [...this.retryPolicy]);
 
         const validator = new ItemsHaveStatus(items.map(i => i.orderLineItemId), LineItemStatus.removed);
-        await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
+        await this.fetchOrder(this.getOrderId(), validator, [...this.retryPolicy]);
     }
 
 
@@ -324,7 +324,7 @@ export class Cart {
     //     return this.client.order.removeItemFromCart({
     //         aggregateId: this.getOrderId(),
     //         orderLineItemId: item.orderLineItemId
-    //     }, this.retryPolicy);
+    //     }, [...this.retryPolicy]);
     // }
 
 
@@ -339,10 +339,10 @@ export class Cart {
         const response = await this.client.order.cartBatchOperation({
             aggregateId: this.getOrderId(),
             operations: this.mapToCartOperations(addItems, removeItems)
-        }, this.retryPolicy);
+        }, [...this.retryPolicy]);
 
         const validator = new ValidateItemsStatus(response.data.orderLineItemIds, removeItems.map(i => i.orderLineItemId));
-        await this.fetchOrder(this.getOrderId(), validator, this.retryPolicy);
+        await this.fetchOrder(this.getOrderId(), validator, [...this.retryPolicy]);
     }
 
 
@@ -401,7 +401,7 @@ export class Cart {
 
         const orderId = this.getOrderId();
         await this.client.order.addOrderToken({aggregateId: orderId, token}, retryPolicy);
-        await this.fetchOrder(orderId, hasToken, this.retryPolicy);
+        await this.fetchOrder(orderId, hasToken, [...this.retryPolicy]);
     }
 
 
@@ -410,7 +410,7 @@ export class Cart {
         const orderId = this.getOrderId();
         const response = await this.client.offer.acceptOffer({aggregateId: orderId, offerId}, retryPolicy);
         const validator = new ItemsHaveStatus([response.data.orderLineItemId], LineItemStatus.reserved);
-        await this.fetchOrder(orderId, validator, this.retryPolicy);
+        await this.fetchOrder(orderId, validator, [...this.retryPolicy]);
     }
 
 
@@ -425,8 +425,8 @@ export class Cart {
                 aggregateId: orderId,
                 timeoutOn: timeoutOn,
                 customerEmail: email
-            }, this.retryPolicy);
-            await this.fetchOrder(this.getOrderId(), isReserved, this.retryPolicy);
+            }, [...this.retryPolicy]);
+            await this.fetchOrder(this.getOrderId(), isReserved, [...this.retryPolicy]);
         }
     }
 
@@ -448,8 +448,8 @@ export class Cart {
                 customerEmail: email,
                 customerRemark: remark,
                 optInOn: optInOn
-            }, this.retryPolicy);
-            await this.fetchOrder(this.getOrderId(), isCheckedOutOrCompleted, this.retryPolicy);
+            }, [...this.retryPolicy]);
+            await this.fetchOrder(this.getOrderId(), isCheckedOutOrCompleted, [...this.retryPolicy]);
         }
 
         // pay if needed
@@ -507,7 +507,7 @@ export class Cart {
             //     amount,
             //     customerId,
             //     paymentMethod: method
-            // }, this.retryPolicy);
+            // }, [...this.retryPolicy]);
             const response = await this.client.payment.createPayment({
                 orderId: this.getOrderId(),
                 currency: currencyCode,
@@ -585,7 +585,7 @@ export class Cart {
             await this.client.order.assignToCustomer({
                 aggregateId: this.getOrderId(),
                 customerId: customerId
-            }, this.retryPolicy);
+            }, [...this.retryPolicy]);
         }
         Cart.setCustomerId(customerId);
         return new Promise((resolve) => resolve())
@@ -593,7 +593,7 @@ export class Cart {
 
     public async removeCustomer(): Promise<void> {
         if(this.hasOrder() && !this.hasCustomerId()) {
-            await this.client.order.unassignFromCustomer({aggregateId: this.getOrderId()}, this.retryPolicy);
+            await this.client.order.unassignFromCustomer({aggregateId: this.getOrderId()}, [...this.retryPolicy]);
         }
         localStorage.removeItem("te-customer-id");
         return new Promise((resolve) => resolve())
