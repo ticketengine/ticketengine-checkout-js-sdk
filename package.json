@@ -11,13 +11,13 @@
   },
   "devDependencies": {
     "@types/jest": "^26.0.0",
-    "@types/node": "^14.0.13",
+    "@types/node": "^10.12.0",
     "jest": "^26.0.1",
     "ts-jest": "^26.1.0",
-    "typescript": "^3.9.5"
+    "typescript": "^4.6.3"
   },
   "dependencies": {
-    "ticketengine-sdk": "^1.27.0"
+    "ticketengine-sdk": "^1.31.0"
   },
   "author": "Tom Timmerman <tom@ticketengine.nl>",
   "license": "ISC",
