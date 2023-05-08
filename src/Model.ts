@@ -197,4 +197,8 @@ export interface ErrorMessages {
     createPaymentFailed?: string;
 }
 
-
+declare global {
+    interface Window {
+        teErrorMessages: {[key: string]: string;}
+    }
+}

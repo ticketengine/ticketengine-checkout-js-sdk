@@ -41,7 +41,8 @@ export class Cart {
     // oauthClientSecret: string;
     // oauthScope: string;
     retryPolicy: number[] = [0, 500, 500, 500, 500, 500, 1000, 1000, 1000, 1000, 1000, 3000, 3000, 3000, 5000, 5000];
-    errorMessages: ErrorMessages = {};
+    // errorMessages: ErrorMessages = {};
+    errorMessages: {[key: string]: string} = {};
 
     // constructor(salesChannelId: string, registerId: string, customerId?: string, clientId?: string, clientSecret?: string, scope?: string, authApiUrl?: string, adminApiUrl?: string, graphApiUrl?: string) {
     constructor(options: CartOptions) {
@@ -182,7 +183,8 @@ export class Cart {
 
         const order = localStorage.getItem("te-order");
         if(!order) {
-            const message = this.errorMessages && this.errorMessages.orderNotFound || 'No order found.';
+            // const message = this.errorMessages && this.errorMessages.orderNotFound || 'No order found.';
+            const message = this.getErrorMessage('orderNotFound') || 'No order found.';
             throw new Error(message);
         }
         return JSON.parse(order);
@@ -206,7 +208,8 @@ export class Cart {
             // if not in desired state, retry query
             if(validator && !validator.validate(order)) {
                 const sleepTime = retryPolicy.shift();
-                const message = this.errorMessages && this.errorMessages.retryAttemptsExceeded || 'Retry attempts exceeded.';
+                // const message = this.errorMessages && this.errorMessages.retryAttemptsExceeded || 'Retry attempts exceeded.';
+                const message = this.getErrorMessage('retryAttemptsExceeded') || 'Retry attempts exceeded.';
                 if(sleepTime === undefined) throw new Error(message); // abort retry, retries attempts exceeded
                 await this.sleep(sleepTime); // wait x milliseconds
                 return await this.fetchOrder(orderId, validator, retryPolicy) // retry
@@ -278,7 +281,8 @@ export class Cart {
 
         const validatorAllItemsConfirmed = new ItemsHaveStatusOneOf(response.data.orderLineItemIds, [LineItemStatus.reserved]);
         if(!validatorAllItemsConfirmed.validate(order)) {
-            const message = this.errorMessages && this.errorMessages.couldNotAddItems || 'Could not add items to cart.';
+            // const message = this.errorMessages && this.errorMessages.couldNotAddItems || 'Could not add items to cart.';
+            const message = this.getErrorMessage('couldNotAddItems') || 'Could not add items to cart.';
             throw new Error(message); //
         }
     }
@@ -372,7 +376,8 @@ export class Cart {
                     data: item
                 })
             } else {
-                const message = this.errorMessages && this.errorMessages.unknownItemType || 'Cannot add item. Unknown item type.';
+                // const message = this.errorMessages && this.errorMessages.unknownItemType || 'Cannot add item. Unknown item type.';
+                const message = this.getErrorMessage('unknownItemType') || 'Cannot add item. Unknown item type.';
                 throw new Error(message);
             }
         });
@@ -527,7 +532,8 @@ export class Cart {
         if(paymentId) {
             return {paymentId, action}
         }
-        const message = this.errorMessages && this.errorMessages.createPaymentFailed || 'Create payment failed.';
+        // const message = this.errorMessages && this.errorMessages.createPaymentFailed || 'Create payment failed.';
+        const message = this.getErrorMessage('createPaymentFailed') || 'Create payment failed.';
         throw new Error(message);
     }
 
@@ -546,7 +552,8 @@ export class Cart {
             const order = JSON.parse(orderString);
             return order.id;
         }
-        const message = this.errorMessages && this.errorMessages.orderNotFound || 'No order found.';
+        // const message = this.errorMessages && this.errorMessages.orderNotFound || 'No order found.';
+        const message = this.getErrorMessage('orderNotFound') || 'No order found.';
         throw new Error(message);
     }
 
@@ -608,7 +615,8 @@ export class Cart {
         if(customerId) {
             return customerId;
         }
-        const message = this.errorMessages && this.errorMessages.customerNotFound || 'No customer found.';
+        // const message = this.errorMessages && this.errorMessages.customerNotFound || 'No customer found.';
+        const message = this.getErrorMessage('customerNotFound') || 'No customer found.';
         throw new Error(message);
     }
 
@@ -624,7 +632,8 @@ export class Cart {
         if(salesChannelId) {
             return salesChannelId;
         }
-        const message = this.errorMessages && this.errorMessages.salesChannelNotFound || 'No sales channel found.';
+        // const message = this.errorMessages && this.errorMessages.salesChannelNotFound || 'No sales channel found.';
+        const message = this.getErrorMessage('salesChannelNotFound') || 'No sales channel found.';
         throw new Error(message);
     }
 
@@ -646,7 +655,8 @@ export class Cart {
         if(registerId) {
             return registerId;
         }
-        const message = this.errorMessages && this.errorMessages.registerNotFound || 'No register found.';
+        // const message = this.errorMessages && this.errorMessages.registerNotFound || 'No register found.';
+        const message = this.getErrorMessage('registerNotFound') || 'No register found.';
         throw new Error(message);
     }
 
@@ -667,7 +677,8 @@ export class Cart {
         if(preferredLanguageCode) {
             return preferredLanguageCode;
         }
-        const message = this.errorMessages && this.errorMessages.noPreferredLanguageSet || 'No preferred language code found.';
+        // const message = this.errorMessages && this.errorMessages.noPreferredLanguageSet || 'No preferred language code found.';
+        const message = this.getErrorMessage('noPreferredLanguageSet') || 'No preferred language code found.';
         throw new Error(message);
     }
 
@@ -684,8 +695,14 @@ export class Cart {
     }
 
 
-    public setErrorMessages(errorMessages: ErrorMessages): void {
+    public setErrorMessages(errorMessages: {[key: string]: string;}): void {
         this.errorMessages = errorMessages;
+    }
+
+    private getErrorMessage(key: string): string|null {
+        if(this.errorMessages && this.errorMessages[key]) return this.errorMessages[key];
+        if(window && window.teErrorMessages && window.teErrorMessages[key]) return window.teErrorMessages[key];
+        return null;
     }
 
     private static isAccessCartItem(item: AddItem): item is AddAccessItem {
@@ -720,7 +737,8 @@ export interface CartOptions {
     graphApiUrl?: string
     clearTokenOnSetAuthUrl?: boolean
     preferredLanguageCode?: string
-    errorMessages?: ErrorMessages
+    // errorMessages?: ErrorMessages
+    errorMessages?: {[key: string]: string;}
 }
 
 
