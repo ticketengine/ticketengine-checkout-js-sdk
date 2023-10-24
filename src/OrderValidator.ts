@@ -6,6 +6,23 @@ export interface OrderValidator {
 }
 
 
+export class AndValidator implements OrderValidator {
+    private readonly validators: OrderValidator[];
+
+    constructor(validators: OrderValidator[]) {
+        this.validators = validators;
+    }
+
+    validate(order: Order): Boolean {
+        for (let i = 0; i < this.validators.length; i++) {
+            if(!this.validators[i].validate(order)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
 export class IsCompleted implements OrderValidator {
     validate(order: Order): Boolean {
         return order && order.status === OrderStatus.completed;
@@ -193,6 +210,9 @@ export class ItemsHaveStatusOneOf implements OrderValidator {
         if(!order || !order.lineItems) {
             return false;
         }
+        if(this.orderLineIds.length > 0 && order.lineItems.length === 0) {
+            return false;
+        }
         // for(let i = 0; i < this.orderLineIds.length; i++){
         //     if(!order.lineItems.filter(l => this.status.includes(l.status)).map(l => l.id).includes(this.orderLineIds[i])) return false;
         // }
@@ -338,6 +358,18 @@ export class CanPayOnline implements OrderValidator {
         return !paymentCurrencies.includes('CINEVILLE');
     }
 }
+
+// export class RequiredPaymentMatchLineItems implements OrderValidator {
+//     validate(order: Order): Boolean {
+//         if(!order || !order.lineItems) {
+//             // return false;
+//         }
+//         for(let i = 0; i < order.lineItems.length; i++){
+//             if(!order.lineItems.filter(l => l.status === this.status).map(l => l.id).includes(this.orderLineIds[i])) return false;
+//         }
+//         // return true;
+//     }
+// }
 
 export class NullValidator implements OrderValidator {
     validate(order: Order): Boolean {
