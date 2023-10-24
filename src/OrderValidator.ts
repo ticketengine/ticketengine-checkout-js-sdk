@@ -189,6 +189,9 @@ export class ItemsHaveStatus implements OrderValidator {
         if(!order || !order.lineItems) {
             return false;
         }
+        if(this.orderLineIds.length > 0 && order.lineItems.length === 0) {
+            return false;
+        }
         for(let i = 0; i < this.orderLineIds.length; i++){
             if(!order.lineItems.filter(l => l.status === this.status).map(l => l.id).includes(this.orderLineIds[i])) return false;
         }
