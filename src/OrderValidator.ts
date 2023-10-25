@@ -1,27 +1,10 @@
-import {LineItemStatus, Order, OrderStatus, PaymentStatus} from "./Model";
+import {LineItemStatus, Order, OrderStatus, PaymentStatus, RequiredPayment} from "./Model";
 
 
 export interface OrderValidator {
     validate(order: Order): Boolean;
 }
 
-
-export class AndValidator implements OrderValidator {
-    private readonly validators: OrderValidator[];
-
-    constructor(validators: OrderValidator[]) {
-        this.validators = validators;
-    }
-
-    validate(order: Order): Boolean {
-        for (let i = 0; i < this.validators.length; i++) {
-            if(!this.validators[i].validate(order)) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
 
 export class IsCompleted implements OrderValidator {
     validate(order: Order): Boolean {
@@ -362,17 +345,58 @@ export class CanPayOnline implements OrderValidator {
     }
 }
 
-// export class RequiredPaymentMatchLineItems implements OrderValidator {
-//     validate(order: Order): Boolean {
-//         if(!order || !order.lineItems) {
-//             // return false;
-//         }
-//         for(let i = 0; i < order.lineItems.length; i++){
-//             if(!order.lineItems.filter(l => l.status === this.status).map(l => l.id).includes(this.orderLineIds[i])) return false;
-//         }
-//         // return true;
-//     }
-// }
+export class RequiredPaymentMatchLineItems implements OrderValidator {
+    validate(order: Order): Boolean {
+        if(!order || !order.lineItems) {
+            return false;
+        }
+
+        // calculate required payments based on order lines
+        const calculatedRequiredPayments: RequiredPayment[] = []; //
+        for (let i = 0; i < order.lineItems.length; i++) {
+            if(order.lineItems[i].status === LineItemStatus.reserved) {
+                const index = calculatedRequiredPayments.findIndex((rp) => {return rp.currency.code === order.lineItems[i].currency?.code})
+                const currency = order.lineItems[i].currency;
+                if(index !== -1) {
+                    calculatedRequiredPayments[index].amount += order.lineItems[i].price;
+                } else if(currency && order.lineItems[i].price > 0) {
+                    calculatedRequiredPayments.push({currency: currency, amount: order.lineItems[i].price})
+                }
+            }
+            if([LineItemStatus.pending, LineItemStatus.awaitingClaim].includes(order.lineItems[i].status)) {
+                return false; // terminate if pending order lines are encountered. When pending order lines are present no accurate calculation of the required payment can be made
+            }
+        }
+
+        // compare calculated required payments with the one from order
+        for (let i = 0; i < calculatedRequiredPayments.length; i++) {
+            const requiredPayment = order.requiredPayments?.find((orp) => orp.currency.code === calculatedRequiredPayments[i].currency.code);
+            if(!requiredPayment || requiredPayment.amount !== calculatedRequiredPayments[i].amount) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+
+export class AndValidator implements OrderValidator {
+    private readonly validators: OrderValidator[];
+
+    constructor(validators: OrderValidator[]) {
+        this.validators = validators;
+    }
+
+    validate(order: Order): Boolean {
+        for (let i = 0; i < this.validators.length; i++) {
+            if(!this.validators[i].validate(order)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
 
 export class NullValidator implements OrderValidator {
     validate(order: Order): Boolean {

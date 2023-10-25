@@ -17,6 +17,7 @@ import {
     ProductPrice
 } from "./Model";
 import {
+    AndValidator,
     CanCheckout,
     CanPay,
     CanReserve,
@@ -26,7 +27,7 @@ import {
     IsPending,
     IsReserved,
     ItemsHaveStatus, ItemsHaveStatusOneOf,
-    OrderValidator,
+    OrderValidator, RequiredPaymentMatchLineItems,
     ValidateItemsStatus
 } from "./OrderValidator";
 
@@ -276,8 +277,10 @@ export class Cart {
         // await this.fetchOrder(this.getOrderId(), validator, [...this.retryPolicy]);
 
         //
-        const validatorItemsInFinalState = new ItemsHaveStatusOneOf(response.data.orderLineItemIds, [LineItemStatus.reserved, LineItemStatus.removed]);
-        const order = await this.fetchOrder(this.getOrderId(), validatorItemsInFinalState, [...this.retryPolicy]);
+        const itemStateValidator = new ItemsHaveStatusOneOf(response.data.orderLineItemIds, [LineItemStatus.reserved, LineItemStatus.removed]);
+        const requiredPaymentValidator = new RequiredPaymentMatchLineItems();
+        const validator = new AndValidator([itemStateValidator, requiredPaymentValidator]);
+        const order = await this.fetchOrder(this.getOrderId(), validator, [...this.retryPolicy]);
 
         const validatorAllItemsConfirmed = new ItemsHaveStatusOneOf(response.data.orderLineItemIds, [LineItemStatus.reserved]);
         if(!validatorAllItemsConfirmed.validate(order)) {
@@ -319,7 +322,9 @@ export class Cart {
             operations: this.mapToCartOperations([], items)
         }, [...this.retryPolicy]);
 
-        const validator = new ItemsHaveStatus(items.map(i => i.orderLineItemId), LineItemStatus.removed);
+        const itemStateValidator = new ItemsHaveStatus(items.map(i => i.orderLineItemId), LineItemStatus.removed);
+        const requiredPaymentValidator = new RequiredPaymentMatchLineItems();
+        const validator = new AndValidator([itemStateValidator, requiredPaymentValidator]);
         await this.fetchOrder(this.getOrderId(), validator, [...this.retryPolicy]);
     }
 
@@ -345,7 +350,9 @@ export class Cart {
             operations: this.mapToCartOperations(addItems, removeItems)
         }, [...this.retryPolicy]);
 
-        const validator = new ValidateItemsStatus(response.data.orderLineItemIds, removeItems.map(i => i.orderLineItemId));
+        const itemStateValidator = new ValidateItemsStatus(response.data.orderLineItemIds, removeItems.map(i => i.orderLineItemId));
+        const requiredPaymentValidator = new RequiredPaymentMatchLineItems();
+        const validator = new AndValidator([itemStateValidator, requiredPaymentValidator]);
         await this.fetchOrder(this.getOrderId(), validator, [...this.retryPolicy]);
     }
 

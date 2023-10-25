@@ -103,6 +103,7 @@ export interface LineItem {
     id: string;
     type: LineItemType;
     status: LineItemStatus;
+    currency?: Currency;
     price: number;
     tax: number;
     limit?: any;
